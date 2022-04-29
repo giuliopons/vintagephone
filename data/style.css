@@ -1,0 +1,11 @@
+*,::after,::before{box-sizing:border-box;font-family: 'Segoe UI',Roboto,'Helvetica Neue',Arial,'Noto Sans','Liberation Sans';line-height:1.5;}
+html,body {padding:0;margin:0;font-size: 5vw;}
+body{color:#212529;background-color: #cae0ca;padding: 1rem;text-align:center}
+h1{text-align: center;font-size:1rem;padding:0;margin:0 0 1rem 0; }
+form {padding:1rem;border:.1vw dotted #606e62;border-radius:.3rem; margin-bottom:2rem}
+button, .btn { background: #606e62;border:none; font-size:1rem;color:#fff;display:inline-block; text-decoration:none;line-height:3rem;padding:0 1rem;border-radius:.3rem;width: 55%;text-align:center;}
+input {display:inline-block;width:100%;font-size:1rem; line-height:2rem;padding:0 .5rem;margin:0;border-radius:.3rem;border:.1vw dotted #606e62; background-color:#fff;}
+.form-floating {margin:0 0 2rem 0;}
+label {padding:0;margin:0;line-height:1.5rem;font-weight:bold; font-size:.8rem;text-align:left;width:100%;display:inline-block;}
+.back {text-decoration:none;color:#606e62}
+

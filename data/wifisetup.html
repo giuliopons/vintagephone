@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang='en'>
+<head>
+	<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+	<title>WIFI SETUP</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<form action='/wifisetup' method='post'>
+		<h1>WIFI SETUP</h1>
+		<div class='form-floating'>
+			<label>SSID</label>
+			<input type='text' name='ssid' value="#ssid#"/>
+		</div>
+		<div class='form-floating'>
+			<label>PASSWORD</label>
+			<input type='password' name='password' value="#pwd#"/>
+		</div>
+		<button type='submit'>save</button>
+	</form>
+	<a href='/' class='back'>&#8592; back to home</a>
+</body>
+</html>

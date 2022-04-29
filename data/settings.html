@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang='en'>
+<head>
+	<meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>
+	<title>Settings</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<form action='/settings' method='post'>
+		<h1>SETTINGS</h1>
+		<div class='form-floating'>
+			<label>METEO SERVICE</label>
+			<input type='text' class='form-control' name='meteo'>
+		</div>
+		<div class='form-floating'>
+			<label>CLOCK SERVICE</label>
+			<input type='text' class='form-control' name='clock'>
+		</div>
+		<button type='submit'>save</button>
+	</form>
+	<a href='/' class='back'>&#larr; back to home</a>
+
+</body>
+</html>
