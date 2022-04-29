@@ -78,6 +78,12 @@ struct settings {
 } userdata = {};
 
 
+
+
+// SPIFFS
+// -----------------------------------------------------
+
+// Read file from file system 
 String readFile(String filename) {
   String out="";
   if (spiffsActive) {
@@ -112,9 +118,12 @@ String readFile(String filename) {
 
 }
 
+
+// EEPROM
+// -----------------------------------------------------
+
+// Read user data from EEPROM (wifi pass...)
 void readUserData(){
-  // ---------------------
-  // READ FROM EEPROM
   EEPROM.begin(sizeof(struct settings) );
   EEPROM.get( 0, userdata );
   
@@ -128,7 +137,10 @@ void readUserData(){
 }
 
 
-// TRY WIFI FOR sec SECONDS
+// WIFI
+// -----------------------------------------------------
+
+// Try wi-fi connection for "sec" seconds, return true on success
 boolean tryWifi(int sec) {
   WiFi.mode(WIFI_STA);
   Serial.println("Try wifi");
@@ -150,6 +162,7 @@ boolean tryWifi(int sec) {
   return true; 
 }
 
+// Connect to wifi, tries multiple "times", if fail and startSetupPortal is true launch AP portal
 void connectToWifi(int times = 3, bool startSetupPortal = false){
   int i =0;
   while(i<times && wifi==false) {
@@ -171,22 +184,21 @@ void connectToWifi(int times = 3, bool startSetupPortal = false){
 }
 
 
+// AP PORTAL: homepage, load home.html from SPIFFS
 void handleHomeMenu() {
-
     Serial.println("home");
     String o = readFile("/home.html");
     webServer.send(200,   "text/html", o );
-  
 }
-void handleCSS() {
 
+// AP PORTAL: handle css
+void handleCSS() {
     Serial.println("style");
     String o = readFile("/style.css");
     webServer.send(200,   "text/css", o );
-  
 }
 
-
+// AP PORTAL: form that shows SSID/password fields (also POST variables)
 void handleFormWifiSetup() {
 
   if (webServer.method() == HTTP_POST) {
@@ -220,7 +232,7 @@ void handleFormWifiSetup() {
   
 }
 
-
+// AP PORTAL: another form for more settings (meteo url...) (TO DO)
 void handleFormSettings() {
 
   if (webServer.method() == HTTP_POST) {
@@ -247,7 +259,8 @@ void handleFormSettings() {
   
 }
 
-String getValue(String data, char separator, int index)
+/*
+ * String getValue(String data, char separator, int index)
 {
   int found = 0;
   int strIndex[] = {0, -1};
@@ -264,9 +277,10 @@ String getValue(String data, char separator, int index)
 
   return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 
-}
+}*/
 
 
+// AP PORTAL: setup the portal
 void setupPortal() {
       Serial.println("");
       Serial.println("Start access point");
@@ -303,7 +317,7 @@ void setupPortal() {
         dnsServer.processNextRequest();
         webServer.handleClient();
 
-        String rx="";
+        /*String rx="";
       
         if(Serial.available() > 0) {
           
@@ -318,7 +332,7 @@ void setupPortal() {
               return;
             }
      
-        }
+        }*/
         
       }
   
@@ -331,9 +345,10 @@ void setupPortal() {
 
 
 //
-// CLOCK / TIMER FUNCTIONS
+// CLOCK / TIMER FUNCTIONS WITH RTC MILLIS
 // ----------------------------------------------------
 
+// read the time from the header of a http request
 String getTimeFromInternet(String host) {
   WiFiClient client;
   while (!!!client.connect(host.c_str(), 80)) {
@@ -366,7 +381,7 @@ String getTimeFromInternet(String host) {
   }
 }
 
-
+// print date time object
 void printDateTime(DateTime now){
     
       Serial.print(now.year(), DEC);
@@ -385,6 +400,8 @@ void printDateTime(DateTime now){
       Serial.println();
 }
 
+// IN Italy we have legal time.
+// return 1 if legal time is ON
 byte LegalTime(DateTime now) {
           byte cFlag = 0;
     const byte iDayW = now.dayOfTheWeek();
@@ -415,6 +432,7 @@ byte LegalTime(DateTime now) {
     return cFlag;
 }
 
+// set the date and time from web using getTimeFromInternet and LegalTime
 void setDateTimeFromWeb(){
   String s = getTimeFromInternet("www.google.it");
   
@@ -463,8 +481,8 @@ void setDateTimeFromWeb(){
 // MP3 FUNCTIONS
 // ----------------------------------------------------
 
-class Mp3Notify
-{
+// class to notify news from mp3 serial communication
+class Mp3Notify {
 public:
   static void PrintlnSourceAction(DfMp3_PlaySources source, const char* action)
   {
@@ -517,13 +535,50 @@ public:
 };
 
 
-// instance a DFMiniMp3 object, 
+
+
+// instance a DFMiniMp3 object, talking to wemos on two pins serial communication.
 SoftwareSerial secondarySerial(PIN_RX_MP3, PIN_TX_MP3); // RX, TX
 DFMiniMp3<SoftwareSerial, Mp3Notify> dfmp3(secondarySerial);
 
 
+// Play a track from a numbered folder
+void playTrackFolderNum(uint8_t folder,uint8_t track,bool waitEnd = false) {
+  playing = 1;
+  
+  dfmp3.playFolderTrack(folder,track);
+  if(waitEnd) {
+    while(playing==1) {
+      dfmp3.loop();
+      checkHangStatus();
+    }
+    delay(200);
+  }
+  
+}
 
-// ROTELLA
+
+// Play a track from the mp3 folder
+void playTrackNum(uint8_t track,bool waitEnd=false) {
+  
+   dfmp3.playMp3FolderTrack(track);
+   playing = 1;
+   if(waitEnd) {
+    Serial.println("wait");
+    while(playing==1) {
+      dfmp3.loop();
+      checkHangStatus();
+    }
+    delay(200);
+  }
+  
+}
+
+
+
+
+
+// ROTARY DIALING ENCODER
 void readNumber() {
   phoneNumber = "";
   
@@ -591,90 +646,6 @@ void readNumber() {
 
 }
 
-
-void playTrackFolderNum(uint8_t folder,uint8_t track,bool waitEnd = false) {
-  playing = 1;
-  
-  dfmp3.playFolderTrack(folder,track);
-  if(waitEnd) {
-    while(playing==1) {
-      dfmp3.loop();
-      checkHangStatus();
-    }
-    delay(200);
-  }
-  
-}
-
-void playTrackNum(uint8_t track,bool waitEnd=false) {
-  
-   dfmp3.playMp3FolderTrack(track);
-   playing = 1;
-   if(waitEnd) {
-    Serial.println("wait");
-    while(playing==1) {
-      dfmp3.loop();
-      checkHangStatus();
-    }
-    delay(200);
-  }
-  
-}
-
-void tellTheTime() {
-      DateTime now = rtc.now();
-      int h = now.hour();
-      int m = now.minute();
-      int s = now.second();
-  
-      printDateTime(now);
-
-      playTrackFolderNum(1,67,WAIT_END); // sono le ore
-      playTrackFolderNum(1,h,WAIT_END); // h
-      playTrackFolderNum(1,62,WAIT_END); // ...e ...
-      playTrackFolderNum(1,m,WAIT_END); // m
- 
-}
-
-void makeSilenceFor(int sec) {
-  unsigned long p = millis() + sec * 1000;
-  while(millis()< p && phoneStatus!=4 && phoneStatus!=5) {
-      dfmp3.loop();
-      checkHangStatus();
-  }
-  
-}
-
-//
-// ring the bells!
-void bells() {
-  int maxRings = 5;
-  setPhoneStatus(5);
-  while(phoneStatus==5 && maxRings>=1) {
-    int i = 0;
-    Serial.println("Ring");
-    while(phoneStatus==5 && i<30) {
-      digitalWrite(PIN_BELL_2,LOW);
-      digitalWrite(PIN_BELL_1,HIGH);
-      delay(20);
-      digitalWrite(PIN_BELL_2,HIGH);
-      digitalWrite(PIN_BELL_1,LOW);
-      delay(20);
-      checkHangStatus();
-      i++;
-    }
-    digitalWrite(PIN_BELL_2,LOW);
-    unsigned long ti = millis() + 2000;
-    while(phoneStatus==5 && millis()<ti){
-      delay(1);
-      checkHangStatus();
-    }
-    maxRings--;
-  }
-  if (maxRings==0) {
-    setPhoneStatus(4);
-  }
-}
 
 
 
@@ -784,6 +755,73 @@ void setup() {
 
 
 
+// PHONE FUNCTIONS
+// ------------------------------------------------
+
+// Tell the time
+void tellTheTime() {
+      DateTime now = rtc.now();
+      int h = now.hour();
+      int m = now.minute();
+      int s = now.second();
+  
+      printDateTime(now);
+
+      // This sequence of mp3 follows the Italian language syntax.
+      // It should be more abstract to use other syntaxes (TO DO)
+
+      playTrackFolderNum(1,67,WAIT_END); // sono le ore
+      playTrackFolderNum(1,h,WAIT_END);  // h
+      playTrackFolderNum(1,62,WAIT_END); // ...e ...
+      playTrackFolderNum(1,m,WAIT_END);  // m
+ 
+}
+
+
+// Function that do nothing, just silence, but keep listening for handset hang up
+void makeSilenceFor(int sec) {
+  unsigned long p = millis() + sec * 1000;
+  while(millis()< p && phoneStatus!=4 && phoneStatus!=5) {
+      dfmp3.loop();
+      checkHangStatus();
+  }  
+}
+
+
+
+//
+// Ring the bells!
+// Make a alternate square wave on bells coil with 2 pin and L293D driver
+void bells() {
+  int maxRings = 5;
+  setPhoneStatus(5);
+  while(phoneStatus==5 && maxRings>=1) {
+    int i = 0;
+    Serial.println("Ring");
+    while(phoneStatus==5 && i<30) {
+      digitalWrite(PIN_BELL_2,LOW);
+      digitalWrite(PIN_BELL_1,HIGH);
+      delay(20);
+      digitalWrite(PIN_BELL_2,HIGH);
+      digitalWrite(PIN_BELL_1,LOW);
+      delay(20);
+      checkHangStatus();
+      i++;
+    }
+    digitalWrite(PIN_BELL_2,LOW);
+    unsigned long ti = millis() + 2000;
+    while(phoneStatus==5 && millis()<ti){
+      delay(1);
+      checkHangStatus();
+    }
+    maxRings--;
+  }
+  if (maxRings==0) {
+    setPhoneStatus(4);
+  }
+}
+
+
 
 
 // answer arrives after 1 or 2 sounds
@@ -803,13 +841,12 @@ void setPhoneStatus(byte newStatus) {
 
 
 
-//
+// check if the handset is hanged up or picked up
+// this action changes the status of the vintagephone
 void checkHangStatus(){
   byte cornettaStatus;
   cornettaStatus = digitalRead(PIN_HANGUP_SWITCH);  // 0 = OPEN, PICK UP - 1 = CLOSE, HUNG UP
 
-
-  // TESTARE QUESTO PEZZETTO
   if (phoneStatus==5 && cornettaStatus==0) {
     // pick up during ringing
     setPhoneStatus(3);
@@ -835,13 +872,18 @@ void checkHangStatus(){
   
 }
 
+
+// tell the time passed after alarm
 void tellTheTimePassed(String numberDialed) {
     caller_1 = numberDialed;
     unsigned long minutesD = strtoul(numberDialed.c_str(), NULL, 10); 
     minutesD =  minutesD - pow(10,numberDialed.length() - 1);
 
+    // this uses Italian language syntax.
+    // probably and abstraction level is needed to handle different languages (TO DO)
     playTrackFolderNum(1,68,WAIT_END); // sono passati
     if(minutesD >= 60) {
+      // if more the 60 minutes say hours and minutes
       int m2 = minutesD % 60;
       minutesD -= m2;
       int h = minutesD / 60;
@@ -854,6 +896,9 @@ void tellTheTimePassed(String numberDialed) {
 }
 
 
+
+//
+// set the timer for alarm and tell the alarm just setted
 void setTheAlarm(String numberDialed) {
     caller_1 = numberDialed;
     if(numberDialed.length()>1 && phoneNumber.length()<=4) {
@@ -861,6 +906,8 @@ void setTheAlarm(String numberDialed) {
       unsigned long minutesD = strtoul(numberDialed.c_str(), NULL, 10); 
       minutesD =  minutesD - pow(10,numberDialed.length() - 1);
       timer_1 = millis() + minutesD * 60 * 1000;
+
+      // this sequence of play mp3 follows italian languyage syntax
       playTrackFolderNum(1,63,WAIT_END); // sveglia impostata tra
       if(minutesD >= 60) {
         int m2 = minutesD % 60;
@@ -987,6 +1034,7 @@ if (phoneStatus==3 && phoneNumber!="") {
 
 
 
+ // 0=DIALING
  if (phoneStatus==0) {
    readNumber() ;
    
