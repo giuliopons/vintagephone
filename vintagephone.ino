@@ -988,14 +988,14 @@ void loop()
   }
 
 
-
+  // 0=RECEIVER PICKED UP (DIALING)
   // WAITING FOR DIALING
   if(playing==0 && phoneStatus==0) {
       playTrackNum( random(8,10));
   }
 
 
-
+  // 4=HANGEDUP
   // ALARM TIME CHECK
   if ( timer_1 !=0 &&  millis()> timer_1 && phoneStatus==4) {
     setPhoneStatus(5);
@@ -1013,7 +1013,7 @@ void loop()
 
 
 
-//
+// 3=ANSWERING
 // answer to the alarm
 if (phoneStatus==3 && phoneNumber!="") {
   if(phoneNumber.charAt(0)=='1') {
@@ -1033,7 +1033,7 @@ if (phoneStatus==3 && phoneNumber!="") {
 }
 
 
-
+ //
  // 0=DIALING
  if (phoneStatus==0) {
    readNumber() ;
