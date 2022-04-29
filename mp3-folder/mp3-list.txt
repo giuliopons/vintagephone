@@ -1,86 +1,91 @@
-C:\Users\pons\Desktop\mp3\01
-C:\Users\pons\Desktop\mp3\lista.txt
-C:\Users\pons\Desktop\mp3\mp3
-C:\Users\pons\Desktop\mp3\01\000.mp3
-C:\Users\pons\Desktop\mp3\01\001.mp3
-C:\Users\pons\Desktop\mp3\01\002.mp3
-C:\Users\pons\Desktop\mp3\01\003.mp3
-C:\Users\pons\Desktop\mp3\01\004.mp3
-C:\Users\pons\Desktop\mp3\01\005.mp3
-C:\Users\pons\Desktop\mp3\01\006.mp3
-C:\Users\pons\Desktop\mp3\01\007.mp3
-C:\Users\pons\Desktop\mp3\01\008.mp3
-C:\Users\pons\Desktop\mp3\01\009.mp3
-C:\Users\pons\Desktop\mp3\01\010.mp3
-C:\Users\pons\Desktop\mp3\01\011.mp3
-C:\Users\pons\Desktop\mp3\01\012.mp3
-C:\Users\pons\Desktop\mp3\01\013.mp3
-C:\Users\pons\Desktop\mp3\01\014.mp3
-C:\Users\pons\Desktop\mp3\01\015.mp3
-C:\Users\pons\Desktop\mp3\01\016.mp3
-C:\Users\pons\Desktop\mp3\01\017.mp3
-C:\Users\pons\Desktop\mp3\01\018.mp3
-C:\Users\pons\Desktop\mp3\01\019.mp3
-C:\Users\pons\Desktop\mp3\01\020.mp3
-C:\Users\pons\Desktop\mp3\01\021.mp3
-C:\Users\pons\Desktop\mp3\01\022.mp3
-C:\Users\pons\Desktop\mp3\01\023.mp3
-C:\Users\pons\Desktop\mp3\01\024.mp3
-C:\Users\pons\Desktop\mp3\01\025.mp3
-C:\Users\pons\Desktop\mp3\01\026.mp3
-C:\Users\pons\Desktop\mp3\01\027.mp3
-C:\Users\pons\Desktop\mp3\01\028.mp3
-C:\Users\pons\Desktop\mp3\01\029.mp3
-C:\Users\pons\Desktop\mp3\01\030.mp3
-C:\Users\pons\Desktop\mp3\01\031.mp3
-C:\Users\pons\Desktop\mp3\01\032.mp3
-C:\Users\pons\Desktop\mp3\01\033.mp3
-C:\Users\pons\Desktop\mp3\01\034.mp3
-C:\Users\pons\Desktop\mp3\01\035.mp3
-C:\Users\pons\Desktop\mp3\01\036.mp3
-C:\Users\pons\Desktop\mp3\01\037.mp3
-C:\Users\pons\Desktop\mp3\01\038.mp3
-C:\Users\pons\Desktop\mp3\01\039.mp3
-C:\Users\pons\Desktop\mp3\01\040.mp3
-C:\Users\pons\Desktop\mp3\01\041.mp3
-C:\Users\pons\Desktop\mp3\01\042.mp3
-C:\Users\pons\Desktop\mp3\01\043.mp3
-C:\Users\pons\Desktop\mp3\01\044.mp3
-C:\Users\pons\Desktop\mp3\01\045.mp3
-C:\Users\pons\Desktop\mp3\01\046.mp3
-C:\Users\pons\Desktop\mp3\01\047.mp3
-C:\Users\pons\Desktop\mp3\01\048.mp3
-C:\Users\pons\Desktop\mp3\01\049.mp3
-C:\Users\pons\Desktop\mp3\01\050.mp3
-C:\Users\pons\Desktop\mp3\01\051.mp3
-C:\Users\pons\Desktop\mp3\01\052.mp3
-C:\Users\pons\Desktop\mp3\01\053.mp3
-C:\Users\pons\Desktop\mp3\01\054.mp3
-C:\Users\pons\Desktop\mp3\01\055.mp3
-C:\Users\pons\Desktop\mp3\01\056.mp3
-C:\Users\pons\Desktop\mp3\01\057.mp3
-C:\Users\pons\Desktop\mp3\01\058.mp3
-C:\Users\pons\Desktop\mp3\01\059.mp3
-C:\Users\pons\Desktop\mp3\01\060.mp3
-C:\Users\pons\Desktop\mp3\01\061.mp3
-C:\Users\pons\Desktop\mp3\01\062.mp3
-C:\Users\pons\Desktop\mp3\01\063.mp3
-C:\Users\pons\Desktop\mp3\01\064.mp3
-C:\Users\pons\Desktop\mp3\01\065.mp3
-C:\Users\pons\Desktop\mp3\01\066.mp3
-C:\Users\pons\Desktop\mp3\01\067.mp3
-C:\Users\pons\Desktop\mp3\01\068.mp3
-C:\Users\pons\Desktop\mp3\01\069.mp3
-C:\Users\pons\Desktop\mp3\mp3\0000.mp3
-C:\Users\pons\Desktop\mp3\mp3\0001.mp3
-C:\Users\pons\Desktop\mp3\mp3\0002.mp3
-C:\Users\pons\Desktop\mp3\mp3\0003.mp3
-C:\Users\pons\Desktop\mp3\mp3\0004.mp3
-C:\Users\pons\Desktop\mp3\mp3\0005.mp3
-C:\Users\pons\Desktop\mp3\mp3\0006.mp3
-C:\Users\pons\Desktop\mp3\mp3\0007.mp3
-C:\Users\pons\Desktop\mp3\mp3\0008.mp3
-C:\Users\pons\Desktop\mp3\mp3\0009.mp3
-C:\Users\pons\Desktop\mp3\mp3\0010.mp3
-C:\Users\pons\Desktop\mp3\mp3\0011.mp3
-C:\Users\pons\Desktop\mp3\mp3\0012.mp3
+FOLDER\FILE      MESSAGE
+
+01\000.mp3 =     "00"
+01\001.mp3 =     "01"
+01\002.mp3 =     "02"
+01\003.mp3 =     "03"
+01\004.mp3 =     "04"
+01\005.mp3 =     "05"
+01\006.mp3 =     "06"
+01\007.mp3 =     "07"
+01\008.mp3 =     "08"
+01\009.mp3 =     "09"
+01\010.mp3 =     "10"
+01\011.mp3 =     "11"
+01\012.mp3 =     "12"
+01\013.mp3 =     "13"
+01\014.mp3 =     "14"
+01\015.mp3 =     "15"
+01\016.mp3 =     "16"
+01\017.mp3 =     "17"
+01\018.mp3 =     "18"
+01\019.mp3 =     "19"
+01\020.mp3 =     "20"
+01\021.mp3 =     "21"
+01\022.mp3 =     "22"
+01\023.mp3 =     "23"
+01\024.mp3 =     "24"
+01\025.mp3 =     "25"
+01\026.mp3 =     "26"
+01\027.mp3 =     "27"
+01\028.mp3 =     "28"
+01\029.mp3 =     "29"
+01\030.mp3 =     "30"
+01\031.mp3 =     "31"
+01\032.mp3 =     "32"
+01\033.mp3 =     "33"
+01\034.mp3 =     "34"
+01\035.mp3 =     "35"
+01\036.mp3 =     "36"
+01\037.mp3 =     "37"
+01\038.mp3 =     "38"
+01\039.mp3 =     "39"
+01\040.mp3 =     "40"
+01\041.mp3 =     "41"
+01\042.mp3 =     "42"
+01\043.mp3 =     "43"
+01\044.mp3 =     "44"
+01\045.mp3 =     "45"
+01\046.mp3 =     "46"
+01\047.mp3 =     "47"
+01\048.mp3 =     "48"
+01\049.mp3 =     "49"
+01\050.mp3 =     "50"
+01\051.mp3 =     "51"
+01\052.mp3 =     "52"
+01\053.mp3 =     "53"
+01\054.mp3 =     "54"
+01\055.mp3 =     "55"
+01\056.mp3 =     "56"
+01\057.mp3 =     "57"
+01\058.mp3 =     "58"
+01\059.mp3 =     "59"
+01\060.mp3 =     "minutes"
+01\061.mp3 =     "hours"
+01\062.mp3 =     "and"
+01\063.mp3 =     "alarm set in"
+01\064.mp3 =     "AP activated, check Vintagephone in wifi networks"
+01\065.mp3 =     "You had set an alarm at this time"
+01\066.mp3 =     "Hours or minutes not valid"
+01\067.mp3 =     "It is"
+01\068.mp3 =     "It's been"
+01\069.mp3 =     "alarm set at"
+mp3\0000.mp3 =     "line available"
+mp3\0001.mp3 =     "connection lost/ended"
+mp3\0002.mp3 =     "voice mail sound"
+mp3\0003.mp3 =     "busy line"
+mp3\0004.mp3 =     "line available"
+mp3\0005.mp3 =     "busy line"
+mp3\0006.mp3 =     "line available"
+mp3\0007.mp3 =     "line available"
+mp3\0008.mp3 =     "line available"
+mp3\0009.mp3 =     "line available"
+mp3\0010.mp3 =     "modem/fax"
+mp3\0011.mp3 =     "modem/fax"
+mp3\0012.mp3 =     "the dialed number is not available"
+
+TO BE RECORDED:
+                   "restarting wemos"
+                   "alarm deleted"
+                   "Time updated from internet"
+                   "Missing wifi
