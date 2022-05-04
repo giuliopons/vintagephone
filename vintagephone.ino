@@ -33,6 +33,7 @@ RTC_Millis rtc;
 //int m=0;
 //int s=0;
 unsigned long timer_1 = 0;
+unsigned long timer_update_rtc_millis = 0;
 String caller_1="";
 
 // WEMOS
@@ -53,7 +54,7 @@ String phoneNumber = "";
 
 
 
-// SPIFF
+// SPIFFS LIBRARIES
 // ----------------------------------------------------
 #include <string.h>
 #include "FS.h"
@@ -80,7 +81,7 @@ struct settings {
 
 
 
-// SPIFFS
+// SPIFFS FUNCTIONS
 // -----------------------------------------------------
 
 // Read file from file system 
@@ -119,7 +120,7 @@ String readFile(String filename) {
 }
 
 
-// EEPROM
+// EEPROM FUNCTIONS
 // -----------------------------------------------------
 
 // Read user data from EEPROM (wifi pass...)
@@ -137,7 +138,7 @@ void readUserData(){
 }
 
 
-// WIFI
+// WIFI FUNCTIONS
 // -----------------------------------------------------
 
 // Try wi-fi connection for "sec" seconds, return true on success
@@ -258,27 +259,6 @@ void handleFormSettings() {
   }
   
 }
-
-/*
- * String getValue(String data, char separator, int index)
-{
-  int found = 0;
-  int strIndex[] = {0, -1};
-  int maxIndex = data.length() - 1;
-
-  for (int i = 0; i <= maxIndex && found <= index; i++) {
-    if (data.charAt(i) == separator || i == maxIndex) {
-      found++;
-      strIndex[0] = strIndex[1] + 1;
-      //strIndex[1] = (i == maxIndex) ? i + 1 : i;
-      strIndex[1] = i;
-    }
-  }
-
-  return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
-
-}*/
-
 
 // AP PORTAL: setup the portal
 void setupPortal() {
@@ -691,7 +671,11 @@ void setup() {
 
   // Set time and date
   if(wifi) {
+    
     setDateTimeFromWeb();
+    timer_update_rtc_millis = millis() + 24 * 3600 * 1000;
+    
+    //rtc.adjust(DateTime(2022, 5, 4, 14, 8, 1));
     DateTime now = rtc.now();
     printDateTime(now);
   } else {
@@ -1011,8 +995,15 @@ void loop()
     }
   }
 
-
-
+  // FIX RTC MILLIS
+  if(millis() > timer_update_rtc_millis) {
+     if(wifi) {   
+        setDateTimeFromWeb(); 
+        // every 24h check for times from web
+        timer_update_rtc_millis = millis() + 24 * 3600 * 1000;
+     }
+  }
+  
 // 3=ANSWERING
 // answer to the alarm
 if (phoneStatus==3 && phoneNumber!="") {
