@@ -1,6 +1,6 @@
-// VINTAGE ROTARY PHONE
+// VINTAGE ROTARY PHONE RETROFIT
 // --------------------------------------------------
-// clip audio can be recorded here https://murf.ai/
+// clip audio can be recorded here: https://murf.ai/
 
 
 // MP3 PLAYER
@@ -1038,18 +1038,21 @@ void loop()
     
     setPhoneStatus(1); // calling
     waitingForAnswer();
-     
-    if(!found && phoneNumber.charAt(0)=='1') {
+
+
+
+    // #1   OR  #1[d]{1,3}  OR    #1-HH-MM
+    // ---------------------------------------------------------------
+    if(phoneNumber.charAt(0)=='1' && phoneNumber.length()<=5) {
       // NUMBER BEGINS WITH 1 TO SET TIME
       //
       setPhoneStatus(3);
+      found = true;
       if(phoneNumber.length()==1) {
-          
           // TELL THE TIME
           tellTheTime();
       }
       if(phoneNumber.length()>1 && phoneNumber.length()<=5) {
-          
           // SET ALARM WITH MINUTES OR WITH HOURS AND MINUTES
           setTheAlarm(phoneNumber);
           
@@ -1059,60 +1062,88 @@ void loop()
     }
 
 
-
-
-    if(!found && phoneNumber=="98") {
-      // GET TIME FROM INTERNET AGAIN
-      //
-      setDateTimeFromWeb();
-
-      // Audio not yet recorded
-      //playTrackFolderNum(1,64,WAIT_END); // Ora impostata da internet
-      setPhoneStatus(2);
-      playTrackNum(1);
-      
-    }
-
     
-    if(!found && phoneNumber=="2") {
-      // REMOVE ALARM
-      //
+    // #2 ALARM DELETED
+    // ---------------------------------------------------------------
+    if(phoneNumber=="2") {
+      found = true;
       timer_1 = 0;
-
-      // Audio not yet recorded
-      //playTrackFolderNum(1,64,WAIT_END); // Sveglia cancellata
+      caller_1="";
+      setPhoneStatus(3);
+      playTrackFolderNum(1,64,WAIT_END); // Sveglia cancellata
       setPhoneStatus(2);
       playTrackNum(1);
       
     }
 
-    if(!found && phoneNumber=="21") {
-      // RESTART WEMOS
-      //
+
+    // #21 RESTART WEMOS
+    // ---------------------------------------------------------------
+    if(phoneNumber=="21") {
+      found = true;
+      setPhoneStatus(3);
+      playTrackNum(17,WAIT_END); // Riavvio in corso
+      setPhoneStatus(2);
       ESP.restart();
       
     }
- 
-    
-    if(!found && phoneNumber=="99") {
-      // NUMBER TO ACTIVATE AP
-      //
 
-      playTrackFolderNum(1,64,WAIT_END); // AP attivo cerca Vintagephone...
+    // #22 GET TIME FROM INTERNET AGAIN
+    // ---------------------------------------------------------------
+    if(phoneNumber=="22") {
+      found = true;
+      setPhoneStatus(3);
+      setDateTimeFromWeb();
+      playTrackFolderNum(1,70,WAIT_END); // Ora impostata da internet
       setPhoneStatus(2);
       playTrackNum(1);
       
+    }
+
+
+    // #23 ACTIVATE AP
+    // ---------------------------------------------------------------
+    if(!found && phoneNumber=="23") {
+      found = true;
+      setPhoneStatus(3);
+      playTrackNum(19,WAIT_END); // AP attivo cerca Vintagephone...
+      setPhoneStatus(2);
+      playTrackNum(1,WAIT_END);
       Serial.println("AP");
       setupPortal();
-
       connectToWifi();
-             
-      
+    }
+
+
+    // #24 HEADS OR TAILS
+    // ---------------------------------------------------------------
+    if(!found && phoneNumber=="24") {
+      found = true;
+      setPhoneStatus(3);
+      playTrackNum(20,WAIT_END); // Lancio una monetina...
+      int r = random(0,2);
+      playTrackNum(15 + r,WAIT_END);
+      Serial.println(r==0 ? "testa" : "croce");
+      setPhoneStatus(2);
+      playTrackNum(1);
+    }
+
+    // #25 YES OR NO
+    // ---------------------------------------------------------------
+    if(!found && phoneNumber=="25") {
+      found = true;
+      setPhoneStatus(3);
+      int r = random(0,2);
+      playTrackNum(13 + r,WAIT_END);
+      Serial.println(r==0 ? "yes" : "no");
+      setPhoneStatus(2);
+      playTrackNum(1);
     }
     
     if(!found) {
       // NUMBER NOT FOUND
       //
+      setPhoneStatus(3);
       playTrackNum(random(10,13),WAIT_END); // modem o non attivo
       setPhoneStatus(2);
       playTrackNum(1);
