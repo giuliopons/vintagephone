@@ -83,9 +83,13 @@ mp3\0009.mp3 =     "line available"
 mp3\0010.mp3 =     "modem/fax"
 mp3\0011.mp3 =     "modem/fax"
 mp3\0012.mp3 =     "the dialed number is not available"
+mp3\0013.mp3 =     "yes"
+mp3\0014.mp3 =     "no"
+mp3\0015.mp3 =     "heads"
+mp3\0016.mp3 =     "tails"
+mp3\0017.mp3 =     "Alarm deleted"
 
 TO BE RECORDED:
                    "restarting wemos"
-                   "alarm deleted"
                    "Time updated from internet"
                    "Missing wifi

@@ -802,6 +802,8 @@ void bells() {
   }
   if (maxRings==0) {
     setPhoneStatus(4);
+    phoneNumber = "";
+    timer_1 = 0;    
   }
 }
 
@@ -834,14 +836,19 @@ void checkHangStatus(){
   if (phoneStatus==5 && cornettaStatus==0) {
     // pick up during ringing
     setPhoneStatus(3);
+    phoneNumber = caller_1;
+    timer_1 = 0;
     delay(200);
-    // stop bells
+    // stop bells and answer
+    
   } else if(phoneStatus==5 && cornettaStatus==1) {
     // nothing, still ringing
 
   } else if (phoneStatus!=4 && cornettaStatus==1) {
     // user hang up while dialing or answering or not valid number
     setPhoneStatus(4);
+    dfmp3.stop();
+    playing=0;
     delay(200);
   } else if (phoneStatus==4 && cornettaStatus==0) {
     // user pick up, from off to dialing
@@ -849,7 +856,7 @@ void checkHangStatus(){
     delay(200);
   }
   
-  if (cornettaStatus==1) {
+  if (cornettaStatus==1 && playing==1) {
     dfmp3.stop();
     playing=0;
   }
@@ -872,6 +879,7 @@ void tellTheTimePassed(String numberDialed) {
       minutesD -= m2;
       int h = minutesD / 60;
       playTrackFolderNum(1,h,WAIT_END); 
+      playTrackFolderNum(1,61,WAIT_END); // ...ore ...
       playTrackFolderNum(1,62,WAIT_END); // ...e ...
       minutesD=m2;
     }
@@ -933,15 +941,14 @@ void setTheAlarm(String numberDialed) {
         unsigned long diff = b.unixtime() - a.unixtime();
         Serial.println(diff);
 
-        timer_1 = diff * 1000;      
+        timer_1 = millis() + diff * 1000;      
 
         // sveglia impostata alle ore
         playTrackFolderNum(1,69,WAIT_END); // sveglia impostata alle
         playTrackFolderNum(1,ht,WAIT_END); 
         playTrackFolderNum(1,62,WAIT_END); // ...e ...
         playTrackFolderNum(1,mt,WAIT_END); 
-        
-      
+    
       } else {
         playTrackFolderNum(1,66,WAIT_END); // ore o minuti non validi
       }
@@ -963,6 +970,18 @@ void loop()
 
 
 
+  // FIX RTC MILLIS
+  if(millis() > timer_update_rtc_millis) {
+     if(wifi) {   
+        setDateTimeFromWeb(); 
+        // every 24h check for times from web
+        timer_update_rtc_millis = millis() + 24 * 3600 * 1000;
+     }
+  }
+
+
+
+
   if(mp3_error_code == 3) {
     // try to solve Com Error 3
     Serial.println(".....");
@@ -981,47 +1000,30 @@ void loop()
 
   // 4=HANGEDUP
   // ALARM TIME CHECK
-  if ( timer_1 !=0 &&  millis()> timer_1 && phoneStatus==4) {
-    setPhoneStatus(5);
+  if ( timer_1 >0 &&  millis()> timer_1 && phoneStatus==4) {
+    setPhoneStatus(5); //ring
     bells();
-    // phoneStatus == 4 | 3
-    if(phoneStatus == 3) {
-      phoneNumber = caller_1;
-      timer_1 = 0;
-    } else {
-      // no answer
-      setPhoneStatus(4);
-      timer_1 = 0;
-    }
   }
 
-  // FIX RTC MILLIS
-  if(millis() > timer_update_rtc_millis) {
-     if(wifi) {   
-        setDateTimeFromWeb(); 
-        // every 24h check for times from web
-        timer_update_rtc_millis = millis() + 24 * 3600 * 1000;
-     }
-  }
   
-// 3=ANSWERING
-// answer to the alarm
-if (phoneStatus==3 && phoneNumber!="") {
-  if(phoneNumber.charAt(0)=='1') {
-    // 
-    if(phoneNumber.length()<5) {
-      makeSilenceFor(1);
-      tellTheTimePassed(phoneNumber);
+  // 3=ANSWERING
+  // answer to the alarm
+  if (phoneStatus==3 && phoneNumber!="") {
+    if(phoneNumber.charAt(0)=='1') {
+      // 
+      if(phoneNumber.length()<5) {
+        makeSilenceFor(1);
+        tellTheTimePassed(phoneNumber);
+      }
+      if(phoneNumber.length()==5) {
+        makeSilenceFor(1);
+        playTrackFolderNum(1,65,WAIT_END); 
+        tellTheTime();
+      }
     }
-    if(phoneNumber.length()==5) {
-      makeSilenceFor(1);
-      playTrackFolderNum(1,65,WAIT_END); 
-      tellTheTime();
-    }
+    setPhoneStatus(2);
+    playTrackNum(1);
   }
-  setPhoneStatus(2);
-  playTrackNum(1);
-}
 
 
  //
