@@ -53,7 +53,6 @@ bool          wifi = false;
 String phoneNumber = "";
 
 
-
 // SPIFFS LIBRARIES
 // ----------------------------------------------------
 #include <string.h>
@@ -524,34 +523,35 @@ DFMiniMp3<SoftwareSerial, Mp3Notify> dfmp3(secondarySerial);
 
 // Play a track from a numbered folder
 void playTrackFolderNum(uint8_t folder,uint8_t track,bool waitEnd = false) {
-  playing = 1;
-  
-  dfmp3.playFolderTrack(folder,track);
-  if(waitEnd) {
-    while(playing==1) {
-      dfmp3.loop();
-      checkHangStatus();
+  if(phoneStatus!=4) {
+    playing = 1;
+    
+    dfmp3.playFolderTrack(folder,track);
+    if(waitEnd) {
+      while(playing==1) {
+        dfmp3.loop();
+        checkHangStatus();
+      }
+      delay(200);
     }
-    delay(200);
-  }
-  
+  }  
 }
 
 
 // Play a track from the mp3 folder
 void playTrackNum(uint8_t track,bool waitEnd=false) {
-  
-   dfmp3.playMp3FolderTrack(track);
-   playing = 1;
-   if(waitEnd) {
-    Serial.println("wait");
-    while(playing==1) {
-      dfmp3.loop();
-      checkHangStatus();
+  if(phoneStatus!=4) {
+     playing = 1;
+     dfmp3.playMp3FolderTrack(track);
+     if(waitEnd) {
+      Serial.println("wait");
+      while(playing==1) {
+        dfmp3.loop();
+        checkHangStatus();
+      }
+      delay(200);
     }
-    delay(200);
   }
-  
 }
 
 
@@ -771,6 +771,174 @@ void makeSilenceFor(int sec) {
   }  
 }
 
+
+int translateMeteoCode(byte i){
+  int clip = -1;
+  if(i==0) { clip = 0; }// Clear sky
+  if(i==1) { clip = 1; }// Mainly clear
+  if(i==2) { clip = 2; }// partly cloudy
+  if(i==3) { clip = 3; }// overcast
+  if(i==45) { clip = 4; }// for
+  if(i==48) { clip = 5; }// rime fog
+  if(i==51) { clip = 6; }// Drizzle: Light
+  if(i==53) { clip = 7; }// Drizzle: moderate
+  if(i==55) { clip = 8; }// Drizzle dense intensity
+  if(i==56) { clip = 9; }// freezing drizzle light
+  if(i==57) { clip = 10; }// freezing drizzle dense
+  if(i==61) { clip = 11; }//  Rain: Slight
+  if(i==63) { clip = 12; }// Rain: moderate
+  if(i==65) { clip = 13; }// rain heavy intensity
+  if(i==71) { clip = 14; }// Snow fall: Slight, 
+  if(i==73) { clip = 15; }// snow fall moderate
+  if(i==75) { clip = 16; }// snbow fall heavy intensity
+
+  if(i==77) { clip = 17; }// Snow grains
+  if(i==80) { clip = 18; }// Rain showers: Slight
+  if(i==81) { clip = 19; }// Rain showers: moderate
+  if(i==82) { clip = 20; }// Rain showers: violent
+  if(i==85) { clip = 21; }// Snow showers slight
+  if(i==86) { clip = 22; }// Snow showers heavy
+  if(i==95) { clip = 23; }// Thunderstorm: Slight or moderate
+  if(i==96) { clip = 24; }// Thunderstorm with slight hail
+  if(i==99) { clip = 25; }// Thunderstorm with heavy hail
+  
+  return clip;
+
+}
+
+
+
+void tellMeMeteo(String pn) {
+  
+  WiFiClient client;
+  
+  if (!client.connect("api.open-meteo.com", 80)) {
+    Serial.println(F("Connection failed"));
+    return;
+  }
+
+  // Send HTTP request
+  client.println(F("GET /v1/forecast?latitude=45.55199&longitude=9.18562&daily=weathercode&timezone=Europe%2FRome HTTP/1.0"));
+  client.println(F("Host: api.open-meteo.com"));
+  client.println(F("Connection: close"));
+  if (client.println() == 0) {
+    Serial.println(F("Failed to send request"));
+    client.stop();
+    return;
+  }
+
+  // Check HTTP status
+  char status[32] = {0};
+  client.readBytesUntil('\r', status, sizeof(status));
+  // It should be "HTTP/1.0 200 OK" or "HTTP/1.1 200 OK"
+  if (strcmp(status + 9, "200 OK") != 0) {
+    Serial.print(F("Unexpected response: "));
+    Serial.println(status);
+    client.stop();
+    return;
+  }
+
+  // Skip HTTP headers
+  char endOfHeaders[] = "\r\n\r\n";
+  if (!client.find(endOfHeaders)) {
+    Serial.println(F("Invalid response"));
+    client.stop();
+    return;
+  }
+
+
+  // Extract weather codes
+  String temp = "";
+  while (client.available() && temp=="") {
+    String line = client.readStringUntil('\n');
+    temp = midString(line,"weathercode\":[","]");
+    Serial.println(line);
+    Serial.println(temp);
+  }  
+  if(temp!="") {
+
+      char * pch;
+      char* x = (char*)temp.c_str(); // a pointer to the first element of the string converted to cstring
+      pch = strtok (x,",");
+
+      byte i=0;
+    
+      int w = 0;
+      while (pch) {
+        Serial.print(i); Serial.print("= ");
+        w = atoi(pch);
+
+        if (i==0) {
+          playTrackFolderNum(2,26,WAIT_END);  // today
+        }
+        if (i==1) {
+          playTrackFolderNum(2,27,WAIT_END);  // tomorrow
+        }
+
+        if (i>1) {
+          // tell the name of the day
+          DateTime now = rtc.now();
+           int g = (now.dayOfTheWeek() + i ) % 7;
+          int clips[7] = {35,29,30,31,32,33,34};
+          playTrackFolderNum(2,clips[g],WAIT_END);  // monday...
+        }
+
+        int a = translateMeteoCode(w);
+        playTrackFolderNum(2,a,WAIT_END);  // clear sky...
+        
+        Serial.println(w);
+        pch = strtok(NULL, ",");
+        i++;
+      }
+  }
+ 
+  // Disconnect
+  client.stop();
+}
+
+String midString(String str, String start, String finish){
+  int locStart = str.indexOf(start);
+  if (locStart==-1) return "";
+  locStart += start.length();
+  int locFinish = str.indexOf(finish, locStart);
+  if (locFinish==-1) return "";
+  return str.substring(locStart, locFinish);
+}
+
+
+
+/*
+void tellMeMeteo( String pn) {
+
+  String host = "https://api.open-meteo.com/v1/forecast?latitude=45.1&longitude=9.3&daily=weathercode&timezone=Europe%2FRome";
+
+  WiFiClient client;
+  while (!!!client.connect(host.c_str(), 80)) {
+    Serial.println("connection failed, retrying...");
+  }
+
+  client.print("HEAD / HTTP/1.1\r\n\r\n");
+
+  String json = "";
+  while(!!!client.available()) {
+     yield();
+  }
+
+  while(client.available()){
+    json = json + client.read();
+  }
+
+  Serial.println(json);
+
+  // TO DO
+  // json parsing
+
+  // TO DO
+  // and ouput audio
+
+}
+
+*/
 
 
 //
@@ -1093,8 +1261,12 @@ void loop()
     if(phoneNumber=="22") {
       found = true;
       setPhoneStatus(3);
-      setDateTimeFromWeb();
-      playTrackFolderNum(1,70,WAIT_END); // Ora impostata da internet
+      if(wifi) {
+        playTrackFolderNum(1,70,WAIT_END); // "Setting date and time from internet..."
+        setDateTimeFromWeb();
+      } else {
+        playTrackNum(18); // "Internet not available"
+      }
       setPhoneStatus(2);
       playTrackNum(1);
       
@@ -1136,6 +1308,20 @@ void loop()
       int r = random(0,2);
       playTrackNum(13 + r,WAIT_END);
       Serial.println(r==0 ? "yes" : "no");
+      setPhoneStatus(2);
+      playTrackNum(1);
+    }
+
+    // #4 METEO
+    // ---------------------------------------------------------------
+    if(phoneNumber=="4") {
+      found = true;
+      setPhoneStatus(3);
+      if(wifi) {
+        tellMeMeteo( phoneNumber );
+      } else {
+        playTrackNum(18); // Internet not available
+      }
       setPhoneStatus(2);
       playTrackNum(1);
     }
