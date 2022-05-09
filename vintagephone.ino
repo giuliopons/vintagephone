@@ -809,6 +809,9 @@ int translateMeteoCode(byte i){
 
 
 void tellMeMeteo(String pn) {
+
+  // sigla ?
+  //playTrackFolderNum(2,26);  // play a jingle and do not wait end, so we can make api calls in background 
   
   WiFiClient client;
   
@@ -818,7 +821,7 @@ void tellMeMeteo(String pn) {
   }
 
   // Send HTTP request
-  client.println(F("GET /v1/forecast?latitude=45.55199&longitude=9.18562&daily=weathercode&timezone=Europe%2FRome HTTP/1.0"));
+  client.println(F("GET /v1/forecast?latitude=45.55199&longitude=9.18562&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FRome HTTP/1.0"));
   client.println(F("Host: api.open-meteo.com"));
   client.println(F("Connection: close"));
   if (client.println() == 0) {
@@ -856,6 +859,14 @@ void tellMeMeteo(String pn) {
     Serial.println(temp);
   }  
   if(temp!="") {
+
+      // check if jingle finished
+      // ----------------------------
+      // while (playing==1) {
+      //   mp3.loop();
+      //   checkHangStatus();
+      // }
+      // ----------------------------
 
       char * pch;
       char* x = (char*)temp.c_str(); // a pointer to the first element of the string converted to cstring
@@ -1311,6 +1322,10 @@ void loop()
       setPhoneStatus(2);
       playTrackNum(1);
     }
+
+
+
+
 
     // #4 METEO
     // ---------------------------------------------------------------
