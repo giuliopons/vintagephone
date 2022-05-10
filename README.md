@@ -1,4 +1,4 @@
-# Vintagephone
+# ☎ Vintagephone
 
 This repository contains the code used to retrofit an old rotary phone and bring new functionalities, along with its fascinating vintage style.
 
