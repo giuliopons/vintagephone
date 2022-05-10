@@ -810,8 +810,8 @@ int translateMeteoCode(byte i){
 
 void tellMeMeteo(String pn) {
 
-  // sigla ?
-  //playTrackFolderNum(2,26);  // play a jingle and do not wait end, so we can make api calls in background 
+  // short jingle 
+  playTrackFolderNum(3,45);  // play a jingle and do not wait end, so we can make api calls in background 
   
   WiFiClient client;
   
@@ -851,21 +851,32 @@ void tellMeMeteo(String pn) {
 
 
   // Extract weather codes
-  String temp = "";
+  String tempMax="",tempMin="",temp = "";
   while (client.available() && temp=="") {
     String line = client.readStringUntil('\n');
+
+    // max and min temperatures
+    tempMax = midString(line,"temperature_2m_max\":[","]");
+    tempMin = midString(line,"temperature_2m_min\":[","]");
+    
+    
     temp = midString(line,"weathercode\":[","]");
     Serial.println(line);
     Serial.println(temp);
+
+
   }  
   if(temp!="") {
 
+
       // check if jingle finished
       // ----------------------------
-      // while (playing==1) {
-      //   mp3.loop();
-      //   checkHangStatus();
-      // }
+       while (playing==1) {
+         dfmp3.loop();
+         checkHangStatus();
+      }
+
+      
       // ----------------------------
 
       char * pch;
@@ -878,6 +889,8 @@ void tellMeMeteo(String pn) {
       while (pch) {
         Serial.print(i); Serial.print("= ");
         w = atoi(pch);
+
+        String tm = extractNumber(tempMax,i);
 
         if (i==0) {
           playTrackFolderNum(2,26,WAIT_END);  // today
@@ -896,6 +909,19 @@ void tellMeMeteo(String pn) {
 
         int a = translateMeteoCode(w);
         playTrackFolderNum(2,a,WAIT_END);  // clear sky...
+
+        if(i==0) playTrackFolderNum(2,36,WAIT_END);  // max temp is...
+        int b = round( atof(tempMax.c_str()) );
+        playTrackFolderNum(1,b,WAIT_END);  // max temp value...
+        playTrackFolderNum(2,38,WAIT_END);  // celsius degree...
+
+        if(i==0) playTrackFolderNum(2,37,WAIT_END);  // min temp...
+        int c = round( atof(tempMin.c_str()) );
+        playTrackFolderNum(1,c,WAIT_END);  // min temp value...
+        playTrackFolderNum(2,38,WAIT_END);  // celsius degree...
+        
+        
+        playTrackFolderNum(3,12,WAIT_END); // sound
         
         Serial.println(w);
         pch = strtok(NULL, ",");
@@ -915,7 +941,20 @@ String midString(String str, String start, String finish){
   if (locFinish==-1) return "";
   return str.substring(locStart, locFinish);
 }
-
+String extractNumber(String str, byte index) {
+      char * pch;
+      char* x = (char*)str.c_str();
+      pch = strtok (x,",");
+      byte i=0;
+      while (pch) {
+        if (index==i) {
+          return (String)pch;
+        }
+        pch = strtok(NULL, ",");
+        i++;
+      }
+      return "";
+}
 
 
 /*
