@@ -50,6 +50,7 @@ String caller_1="";
 #define PIN_BELL_2 D3
 const char*   projectname = "vintagephone";
 bool          wifi = false;
+bool          ap_active = false;
 String phoneNumber = "";
 
 
@@ -74,7 +75,9 @@ ESP8266WebServer webServer(80);
 struct settings {
   char ssid[30];
   char password[30];
-  char vars[255];
+  char lat[9];
+  char lon[9];
+  char utc[30];
 } userdata = {};
 
 
@@ -193,9 +196,21 @@ void handleHomeMenu() {
 
 // AP PORTAL: handle css
 void handleCSS() {
-    Serial.println("style");
+    Serial.println(F("style"));
     String o = readFile("/style.css");
     webServer.send(200,   "text/css", o );
+}
+
+// AP PORTAL: handle stop AP url
+void handleStopAP(){
+    Serial.println(F("stop AP"));
+    String o = readFile("/generic.html");
+    o.replace("#title#", "Stop");
+    o.replace("#msg#","Turning AP off...");
+    webServer.send(200,   "text/css", o );
+    ap_active = false;
+    WiFi.softAPdisconnect(true);
+    connectToWifi();
 }
 
 // AP PORTAL: form that shows SSID/password fields (also POST variables)
@@ -235,25 +250,35 @@ void handleFormWifiSetup() {
 // AP PORTAL: another form for more settings (meteo url...) (TO DO)
 void handleFormSettings() {
 
+
   if (webServer.method() == HTTP_POST) {
 
-    //strncpy(userdata.ssid,     webServer.arg("ssid").c_str(),     sizeof(userdata.ssid) );
-    //strncpy(userdata.password, webServer.arg("password").c_str(), sizeof(userdata.password) );
-    //userdata.ssid[webServer.arg("ssid").length()] = userdata.password[webServer.arg("password").length()] = '\0';
-    //EEPROM.put(0, userdata);
-    //EEPROM.commit();
-    Serial.println("saved settings");
+    strncpy(userdata.lat, webServer.arg("lat").c_str(),  sizeof(userdata.lat) );
+    strncpy(userdata.lon, webServer.arg("lon").c_str(),  sizeof(userdata.lon) );
+    strncpy(userdata.utc, webServer.arg("utc").c_str(),  sizeof(userdata.utc) );
+    userdata.lat[webServer.arg("lat").length()] = userdata.lon[webServer.arg("lon").length()] = userdata.utc[webServer.arg("utc").length()] = '\0';
+    EEPROM.put(0, userdata);
+    EEPROM.commit();
+    Serial.println("saved");
     String o = readFile("/savedsettings.html");
+    String css = readFile("/style.css"); 
+    o.replace("<link rel=\"stylesheet\" href=\"style.css\">","<style>" + css + "</style>");
     webServer.send(200,   "text/html",  o );
-    
-    //Serial.println("restart");
-    //delay(5000);
-    //ESP.restart();
+
+    /*unsigned timer = millis() + 15000;
+    while(millis()<timer) {
+      yield();
+    }
+    Serial.println("restart");
+    ESP.restart();*/
       
   } else {
 
-    Serial.println("form settings");
+    Serial.println("form");
     String o = readFile("/settings.html");
+    o.replace("#lat#", userdata.lat);
+    o.replace("#lon#", userdata.lon);
+    o.replace("#utc#", userdata.utc);
     webServer.send(200,   "text/html", o );
   }
   
@@ -282,37 +307,21 @@ void setupPortal() {
        
         webServer.send(200, "text/html", o);
       });
-      webServer.on("/",  handleHomeMenu);
-      webServer.on("/style.css",  handleCSS);
+      webServer.on("/",  handleHomeMenu);           // HOME
+      webServer.on("/style.css",  handleCSS);       // CSS
 
-      webServer.on("/wifisetup",  handleFormWifiSetup);
-      webServer.on("/settings",  handleFormSettings); 
+      webServer.on("/wifisetup",  handleFormWifiSetup);   // WIFI SETTINGS
+      webServer.on("/settings",  handleFormSettings);     // PHONE SETTINGS
+      webServer.on("/stopap",  handleStopAP);             // STOP AP
       webServer.begin();
 
+      ap_active = true;
 
       // never ending loop waiting access point configuration     
-      while(true){
+      while(ap_active){
         delay(50);
         dnsServer.processNextRequest();
-        webServer.handleClient();
-
-        /*String rx="";
-      
-        if(Serial.available() > 0) {
-          
-            rx = Serial.readStringUntil('\n');
-            rx = getValue(rx,':',0); // 1:qualunquecosa dopo i :
-            if(rx=="stopap") { // stoppa ap
-              Serial.println("stop ap");
-              //ESP.restart();
-              WiFi.softAPdisconnect (true);
-              
-              
-              return;
-            }
-     
-        }*/
-        
+        webServer.handleClient();        
       }
   
 }
@@ -821,7 +830,12 @@ void tellMeMeteo(String pn) {
   }
 
   // Send HTTP request
-  client.println(F("GET /v1/forecast?latitude=45.55199&longitude=9.18562&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=Europe%2FRome HTTP/1.0"));
+  String o = F("GET /v1/forecast?latitude=#lat#&longitude=#lon#&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=#utc# HTTP/1.0");
+  o.replace("#lat#", userdata.lat);
+  o.replace("#lon#", userdata.lon);
+  o.replace("#utc#", userdata.utc);
+  Serial.println(o);
+  client.println(o);
   client.println(F("Host: api.open-meteo.com"));
   client.println(F("Connection: close"));
   if (client.println() == 0) {
@@ -863,8 +877,8 @@ void tellMeMeteo(String pn) {
     temp = midString(line,"weathercode\":[","]");
     Serial.println(line);
     Serial.println(temp);
-
-
+    Serial.println(tempMax);
+    Serial.println(tempMin);
   }  
   if(temp!="") {
 
@@ -887,10 +901,11 @@ void tellMeMeteo(String pn) {
     
       int w = 0;
       while (pch) {
-        Serial.print(i); Serial.print("= ");
+        Serial.print(i); Serial.print("=>> ");
         w = atoi(pch);
-
-        String tm = extractNumber(tempMax,i);
+        Serial.print(pch);
+        Serial.print("----");
+        Serial.println(w);
 
         if (i==0) {
           playTrackFolderNum(2,26,WAIT_END);  // today
@@ -910,20 +925,23 @@ void tellMeMeteo(String pn) {
         int a = translateMeteoCode(w);
         playTrackFolderNum(2,a,WAIT_END);  // clear sky...
 
-        if(i==0) playTrackFolderNum(2,36,WAIT_END);  // max temp is...
-        int b = round( atof(tempMax.c_str()) );
-        playTrackFolderNum(1,b,WAIT_END);  // max temp value...
-        playTrackFolderNum(2,38,WAIT_END);  // celsius degree...
-
-        if(i==0) playTrackFolderNum(2,37,WAIT_END);  // min temp...
-        int c = round( atof(tempMin.c_str()) );
-        playTrackFolderNum(1,c,WAIT_END);  // min temp value...
-        playTrackFolderNum(2,38,WAIT_END);  // celsius degree...
+        
+        if(i==0) {
+          playTrackFolderNum(2,36,WAIT_END);  // max temp is...
+          int b = round( atof(tempMax.c_str()) );
+          playTrackFolderNum(1,b,WAIT_END);  // max temp value...
+          playTrackFolderNum(2,38,WAIT_END);  // celsius degree...
+        
+          playTrackFolderNum(2,37,WAIT_END);  // min temp...
+          int c = round( atof(tempMin.c_str()) );
+          playTrackFolderNum(1,c,WAIT_END);  // min temp value...
+          playTrackFolderNum(2,38,WAIT_END);  // celsius degree...
+        }
         
         
-        playTrackFolderNum(3,12,WAIT_END); // sound
+        playTrackFolderNum(3,i<6 ? 12 : 7,WAIT_END); // sound
         
-        Serial.println(w);
+        
         pch = strtok(NULL, ",");
         i++;
       }

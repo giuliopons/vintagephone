@@ -7,18 +7,22 @@
 </head>
 <body>
 	<form action='/settings' method='post'>
-		<h1>SETTINGS</h1>
+		<h1>☎ SETTINGS</h1>
 		<div class='form-floating'>
-			<label>METEO SERVICE</label>
-			<input type='text' class='form-control' name='meteo'>
+			<label>Latitude</label>
+			<input type='text' class='form-control' name='lat' placeholder='45.55' value="#lat#" maxlength="6">
 		</div>
 		<div class='form-floating'>
-			<label>CLOCK SERVICE</label>
-			<input type='text' class='form-control' name='clock'>
+			<label>Longitude</label>
+			<input type='text' class='form-control' name='lon' placeholder='9.18' value="#lon#" maxlength="6">
+		</div>
+		<div class='form-floating'>
+			<label>UTC</label>
+			<input type='text' class='form-control' name='utc' placeholder='Europe/Rome' value="#utc#" maxlength="30">
 		</div>
 		<button type='submit'>save</button>
 	</form>
-	<a href='/' class='back'>&#larr; back to home</a>
+	<a href='/' class='back'>&#8592; back to home</a>
 
 </body>
 </html>
