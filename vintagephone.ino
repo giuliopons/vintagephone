@@ -422,9 +422,7 @@ byte LegalTime(DateTime now) {
 
 // set the date and time from web using getTimeFromInternet and LegalTime
 void setDateTimeFromWeb(){
-  String s = getTimeFromInternet("www.google.it");
-  
-
+    String s = getTimeFromInternet("www.google.it");
     char* pch;
     char *dup = strdup(s.c_str());
     pch = strtok(dup," :");
@@ -451,16 +449,11 @@ void setDateTimeFromWeb(){
     int GMT = 1;
     DateTime n = DateTime(ladata.c_str(),laora.c_str());
     //n = n + (1 se ora legale)  *3600;
-     byte cFlag = LegalTime(n);
-      n = n + ( GMT + cFlag )   *3600;
+    byte cFlag = LegalTime(n);
+    n = n + ( GMT + cFlag )   *3600;
 
-    rtc.adjust(n);
-   
-  
-
-  
+    rtc.adjust(n);  
 }
-
 
 
 
@@ -770,6 +763,30 @@ void tellTheTime() {
  
 }
 
+// Adjust dat and time with the encoder
+void setTheTime(String numberDialed) {
+    String temp = "00";
+    temp[0] = numberDialed.charAt(2);
+    temp[1] = numberDialed.charAt(3);
+    int ihh = temp.toInt();
+    temp = "00";
+    temp[0] = numberDialed.charAt(4);
+    temp[1] = numberDialed.charAt(5);
+    int imm = temp.toInt();
+  
+  if(ihh<24 && imm<60) {
+    DateTime a = rtc.now();
+    rtc.adjust(DateTime(a.year(), a.month(), a.day(), ihh, imm, 0));
+    
+    //playTrackFolderNum(1,64,WAIT_END); // Ora impostata a    (TO DO)
+    playTrackFolderNum(1,ihh,WAIT_END);  // h
+    playTrackFolderNum(1,62,WAIT_END); // ...e ...
+    playTrackFolderNum(1,imm,WAIT_END);  // m
+  } else {
+    playTrackFolderNum(1,66,WAIT_END); // ore o minuti non validi
+  }
+}
+
 
 // Function that do nothing, just silence, but keep listening for handset hang up
 void makeSilenceFor(int sec) {
@@ -779,6 +796,10 @@ void makeSilenceFor(int sec) {
       checkHangStatus();
   }  
 }
+
+
+
+
 
 
 int translateMeteoCode(byte i){
@@ -1309,8 +1330,10 @@ void loop()
       playTrackFolderNum(1,64,WAIT_END); // Sveglia cancellata
       setPhoneStatus(2);
       playTrackNum(1);
-      
     }
+
+ 
+
 
 
     // #21 RESTART WEMOS
@@ -1339,7 +1362,16 @@ void loop()
       playTrackNum(1);
       
     }
-
+    // #22-HH-MM SET TIME
+    // #22-YYYY-MM-DD SET DATE (TO DO)
+    // ---------------------------------------------------------------
+    if(phoneNumber.charAt(0)=='2' && phoneNumber.charAt(1)=='2' && phoneNumber.length()==6) {
+      found = true;
+      setPhoneStatus(3);
+      setTheTime(phoneNumber);
+      setPhoneStatus(2);
+      playTrackNum(1);
+    }
 
     // #23 ACTIVATE AP
     // ---------------------------------------------------------------
