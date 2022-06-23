@@ -3,6 +3,10 @@
 // clip audio can be recorded here: https://murf.ai/
 
 
+
+
+
+
 // MP3 PLAYER
 // ----------------------------------------------------
 #include <SoftwareSerial.h>
@@ -14,8 +18,11 @@
 int playing = 0;
 int mp3_error_code;
 
+
+
 // PHONE STATUS
 // -----------------------------------------------
+String phoneNumber = ""; // dialed phone numbers
 byte phoneStatus = 4;
 // 0 dialing (or waiting for dialiang, handset up)
 // 1 calling
@@ -29,33 +36,38 @@ byte phoneStatus = 4;
 // --------------------------------------------------
 #include "RTClib.h"
 RTC_Millis rtc;
-//int h=0;
-//int m=0;
-//int s=0;
 unsigned long timer_1 = 0;
 unsigned long timer_update_rtc_millis = 0;
 String caller_1="";
 
-// WEMOS
+
+
+
+// WEMOS LIBRARIES
 // ---------------------------------------------------
+
+const char*   projectname = "vintagephone"; // configrable name of the AP network
+
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
-#include <EEPROM.h>
 #include <ArduinoOTA.h>
 #define PIN_HANGUP_SWITCH D1      // switch hang up
 #define PIN_ROTARY D8    // rotary encoder pin
 #define PIN_BELL_1 D2
 #define PIN_BELL_2 D3
-const char*   projectname = "vintagephone";
-bool          wifi = false;
-bool          ap_active = false;
-String phoneNumber = "";
+bool          wifi = false;                 // global variable for wifi status
+bool          ap_active = false;            // global variable for access point mode status
 
 
-// SPIFFS LIBRARIES
+
+
+
+
+// SPIFFS AND EEPROM LIBRARIES
 // ----------------------------------------------------
+#include <EEPROM.h>
 #include <string.h>
 #include "FS.h"
 bool    spiffsActive = false;
@@ -72,6 +84,13 @@ bool    spiffsActive = false;
 DNSServer dnsServer;
 ESP8266WebServer webServer(80);
 
+
+
+
+// SPIFFS AND EEPROM FUNCTIONS
+// -----------------------------------------------------
+
+// Structure for data saved in EEPROM
 struct settings {
   char ssid[30];
   char password[30];
@@ -79,12 +98,6 @@ struct settings {
   char lon[9];
   char utc[30];
 } userdata = {};
-
-
-
-
-// SPIFFS FUNCTIONS
-// -----------------------------------------------------
 
 // Read file from file system 
 String readFile(String filename) {
@@ -121,10 +134,6 @@ String readFile(String filename) {
 
 }
 
-
-// EEPROM FUNCTIONS
-// -----------------------------------------------------
-
 // Read user data from EEPROM (wifi pass...)
 void readUserData(){
   EEPROM.begin(sizeof(struct settings) );
@@ -138,6 +147,10 @@ void readUserData(){
   //  EEPROM.put(0, userdata);
   //  EEPROM.commit();
 }
+
+
+
+
 
 
 // WIFI FUNCTIONS
@@ -640,104 +653,6 @@ void readNumber() {
 
 
 
-void setup() {
-  Serial.begin(115200);
-  Serial.println("------------------");
-  Serial.println("Starting...");
-  
-  pinMode(PIN_ROTARY, INPUT);
-  pinMode(PIN_HANGUP_SWITCH, INPUT_PULLUP);
-  pinMode(PIN_BELL_1,OUTPUT);
-  pinMode(PIN_BELL_2,OUTPUT);
-
-  // WEMOS
-  // -----------------------------------------------
-  // turn off led Wemos power
-  pinMode(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-
-  // 
-  // Start filing subsystem
-  if (SPIFFS.begin()) {
-      Serial.println("SPIFFS Active");
-      spiffsActive = true;
-  } else {
-      Serial.println("Unable to activate SPIFFS");
-  }
-
-  // Read data from EEPROM
-  readUserData();
-
-  // Try fow Wi-fi connection
-  connectToWifi();
-
-  // Set time and date
-  if(wifi) {
-    
-    setDateTimeFromWeb();
-    timer_update_rtc_millis = millis() + 24 * 3600 * 1000;
-    
-    //rtc.adjust(DateTime(2022, 5, 4, 14, 8, 1));
-    DateTime now = rtc.now();
-    printDateTime(now);
-  } else {
-    rtc.adjust(DateTime(2022, 1, 1, 1, 1, 1));
-  }  
-
-  // randomize after wifi connection so time changes
-  randomSeed(millis());
-
-
-  // DFMINI MP3
-  // -----------------------------------------------
-  dfmp3.begin();
-  dfmp3.reset();
-  dfmp3.setVolume(VOLUME);
-
-  uint16_t count = dfmp3.getTotalTrackCount(DfMp3_PlaySource_Sd);
-  Serial.println("files found " + (String)count);
-
-
-  
-
-  //
-  // -----------------------------------------------
-  // WEMOS UPDATE OVER THE AIR
-  ArduinoOTA.setHostname(projectname);
-  ArduinoOTA.onStart([]() {
-    String type;
-    if (ArduinoOTA.getCommand() == U_FLASH)
-      type = "sketch";
-    else // U_SPIFFS
-      type = "filesystem";
-    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("Start updating " + type);
-  });
-  ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
-  });
-  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
-    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-  });
-  ArduinoOTA.onError([](ota_error_t error) {
-    Serial.printf("Error[%u]: ", error);
-    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
-  });
-  ArduinoOTA.begin();
-  // -----------------------------------------------
-
-
-
-
-
-  
-}
-
-
 
 
 
@@ -763,7 +678,7 @@ void tellTheTime() {
  
 }
 
-// Adjust dat and time with the encoder
+// Adjust time with the dial
 void setTheTime(String numberDialed) {
     String temp = "00";
     temp[0] = numberDialed.charAt(2);
@@ -787,6 +702,36 @@ void setTheTime(String numberDialed) {
   }
 }
 
+// Adjust date with the dial
+void setTheDate(String numberDialed) {
+    String temp = "0000";
+    temp[0] = numberDialed.charAt(2);
+    temp[1] = numberDialed.charAt(3);
+    temp[2] = numberDialed.charAt(4);
+    temp[3] = numberDialed.charAt(5);
+    int yyyy = temp.toInt();
+    temp = "00";
+    temp[0] = numberDialed.charAt(6);
+    temp[1] = numberDialed.charAt(7);
+    int mm = temp.toInt();
+    temp = "00";
+    temp[0] = numberDialed.charAt(8);
+    temp[1] = numberDialed.charAt(9);
+    int dd = temp.toInt();
+  
+  if(yyyy>1970 && dd>0 && dd<32 && mm<13  && mm>0) {
+    DateTime a = rtc.now();
+    rtc.adjust(DateTime(yyyy, mm, dd, a.hour(), a.minute(), 0));
+    
+    //playTrackFolderNum(1,64,WAIT_END); // data impostata a    (TO DO)
+    //playTrackFolderNum(1,ihh,WAIT_END);  // yyyy    (TODO)
+    //playTrackFolderNum(1,62,WAIT_END); // mm
+    //playTrackFolderNum(1,imm,WAIT_END);  // dd
+  } else {
+    //playTrackFolderNum(1,66,WAIT_END); // wrong date    (TO DO)
+  }
+}
+
 
 // Function that do nothing, just silence, but keep listening for handset hang up
 void makeSilenceFor(int sec) {
@@ -801,7 +746,7 @@ void makeSilenceFor(int sec) {
 
 
 
-
+// convert meteo code to track number
 int translateMeteoCode(byte i){
   int clip = -1;
   if(i==0) { clip = 0; }// Clear sky
@@ -893,8 +838,7 @@ void tellMeMeteo(String pn) {
     // max and min temperatures
     tempMax = midString(line,"temperature_2m_max\":[","]");
     tempMin = midString(line,"temperature_2m_min\":[","]");
-    
-    
+      
     temp = midString(line,"weathercode\":[","]");
     Serial.println(line);
     Serial.println(temp);
@@ -910,8 +854,6 @@ void tellMeMeteo(String pn) {
          dfmp3.loop();
          checkHangStatus();
       }
-
-      
       // ----------------------------
 
       char * pch;
@@ -972,62 +914,17 @@ void tellMeMeteo(String pn) {
   client.stop();
 }
 
-String midString(String str, String start, String finish){
-  int locStart = str.indexOf(start);
+// extract string between two tags
+String midString(String str, String startTag, String finishTag){
+  int locStart = str.indexOf(startTag);
   if (locStart==-1) return "";
-  locStart += start.length();
-  int locFinish = str.indexOf(finish, locStart);
+  locStart += startTag.length();
+  int locFinish = str.indexOf(finishTag, locStart);
   if (locFinish==-1) return "";
   return str.substring(locStart, locFinish);
 }
-String extractNumber(String str, byte index) {
-      char * pch;
-      char* x = (char*)str.c_str();
-      pch = strtok (x,",");
-      byte i=0;
-      while (pch) {
-        if (index==i) {
-          return (String)pch;
-        }
-        pch = strtok(NULL, ",");
-        i++;
-      }
-      return "";
-}
 
 
-/*
-void tellMeMeteo( String pn) {
-
-  String host = "https://api.open-meteo.com/v1/forecast?latitude=45.1&longitude=9.3&daily=weathercode&timezone=Europe%2FRome";
-
-  WiFiClient client;
-  while (!!!client.connect(host.c_str(), 80)) {
-    Serial.println("connection failed, retrying...");
-  }
-
-  client.print("HEAD / HTTP/1.1\r\n\r\n");
-
-  String json = "";
-  while(!!!client.available()) {
-     yield();
-  }
-
-  while(client.available()){
-    json = json + client.read();
-  }
-
-  Serial.println(json);
-
-  // TO DO
-  // json parsing
-
-  // TO DO
-  // and ouput audio
-
-}
-
-*/
 
 
 //
@@ -1215,19 +1112,145 @@ void setTheAlarm(String numberDialed) {
 
 
 
+void setup() {
+  Serial.begin(115200);
+  Serial.println("-----------------------");
+  Serial.println("Welcome to Vintagephone");
+  Serial.println("-----------------------");
+
+  //
+  // Configure pins that are connected to
+  // the hardware of the old phone
+  pinMode(PIN_ROTARY, INPUT);
+  pinMode(PIN_HANGUP_SWITCH, INPUT_PULLUP);
+  pinMode(PIN_BELL_1,OUTPUT);
+  pinMode(PIN_BELL_2,OUTPUT);
+
+
+  //
+  // turn off the blue led of Wemos power
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+
+
+  //
+  // SPIFFS
+  // Start the file subsystem, used to store HTML
+  // CSS and other files for captive portal AP
+  if (SPIFFS.begin()) {
+      Serial.println("SPIFFS Active");
+      spiffsActive = true;
+  } else {
+      Serial.println("Unable to activate SPIFFS");
+  }
+
+
+  //
+  // Read data from EEPROM: if already configured
+  // whe have username and password for wifi access
+  readUserData();
+
+  //
+  // Try to use user an password to connect
+  // to internet, result is stored in global wifi var
+  connectToWifi();
+
+  //
+  // if wifi access is available, set time and date
+  // from internet
+  if(wifi) {
+    setDateTimeFromWeb();
+    timer_update_rtc_millis = millis() + 24 * 3600 * 1000;
+    //rtc.adjust(DateTime(2022, 5, 4, 14, 8, 1));
+    DateTime now = rtc.now();
+    printDateTime(now);
+  } else {
+    rtc.adjust(DateTime(2022, 1, 1, 1, 1, 1));
+  }  
+
+
+  //
+  // randomize after wifi connection so it should be
+  // different everytime
+  randomSeed(millis());
+
+
+  //
+  // Start communication with DFMINI MP3 player
+  // set volume and count tracks
+  dfmp3.begin();
+  dfmp3.reset();
+  dfmp3.setVolume(VOLUME);
+  uint16_t count = dfmp3.getTotalTrackCount(DfMp3_PlaySource_Sd);
+  Serial.println("files found " + (String)count);
+
+
+  
+
+  //
+  // Setup the WEMOS UPDATE OVER THE AIR process
+  // this will allow to upload a new sketch to the Vintagephone
+  // without plugging the USB cable to the Wemos.
+  ArduinoOTA.setHostname(projectname);
+  ArduinoOTA.onStart([]() {
+    String type;
+    if (ArduinoOTA.getCommand() == U_FLASH)
+      type = "sketch";
+    else // U_SPIFFS
+      type = "filesystem";
+    // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+    Serial.println("Start updating " + type);
+  });
+  ArduinoOTA.onEnd([]() {
+    Serial.println("\nEnd");
+  });
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
+    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
+    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
+    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+  });
+  ArduinoOTA.begin();
+  // -----------------------------------------------
+
+  
+}
+
+
+
+
+
 
 
 void loop()
 {
+  //
+  // Handle the Over The Air update process
   ArduinoOTA.handle();
 
+  //
+  // check the status of the hang switch
+  // necessary to understand the phone status
   checkHangStatus();
 
+  //
+  // this function of the DFMINI player
+  // object handles the communication with
+  // the hardware of the mp3
   dfmp3.loop();
 
 
 
+  //
   // FIX RTC MILLIS
+  // The clock of the ESP isn't precise, so we can
+  // periodically call an internet site (google) to
+  // read the correct date and time.
   if(millis() > timer_update_rtc_millis) {
      if(wifi) {   
         setDateTimeFromWeb(); 
@@ -1237,10 +1260,10 @@ void loop()
   }
 
 
-
-
+  // the dfmp3 library sometimes shows a Com Error
+  // while communicating with the mp3 player. If this
+  // happens this code tries to solve the Com Error 3
   if(mp3_error_code == 3) {
-    // try to solve Com Error 3
     Serial.println(".....");
     mp3_error_code = 0;
     dfmp3.begin();dfmp3.reset();dfmp3.setVolume(VOLUME);
@@ -1248,14 +1271,23 @@ void loop()
   }
 
 
-  // 0=RECEIVER PICKED UP (DIALING)
+
+
+
+  // ========================================================================
+  // MONITORING PHONE STATUS
+  // ========================================================================
+
+
+  // 0 = RECEIVER PICKED UP (DIALING)
   // WAITING FOR DIALING
   if(playing==0 && phoneStatus==0) {
       playTrackNum( random(8,10));
   }
 
 
-  // 4=HANGEDUP
+
+  // 4 = HANGEDUP
   // ALARM TIME CHECK
   if ( timer_1 >0 &&  millis()> timer_1 && phoneStatus==4) {
     setPhoneStatus(5); //ring
@@ -1263,7 +1295,7 @@ void loop()
   }
 
   
-  // 3=ANSWERING
+  // 3 = ANSWERING
   // answer to the alarm
   if (phoneStatus==3 && phoneNumber!="") {
     if(phoneNumber.charAt(0)=='1') {
@@ -1284,7 +1316,7 @@ void loop()
 
 
  //
- // 0=DIALING
+ // 0 = DIALING PROCESS
  if (phoneStatus==0) {
    readNumber() ;
    
@@ -1362,13 +1394,23 @@ void loop()
       playTrackNum(1);
       
     }
+
     // #22-HH-MM SET TIME
-    // #22-YYYY-MM-DD SET DATE (TO DO)
     // ---------------------------------------------------------------
     if(phoneNumber.charAt(0)=='2' && phoneNumber.charAt(1)=='2' && phoneNumber.length()==6) {
       found = true;
       setPhoneStatus(3);
       setTheTime(phoneNumber);
+      setPhoneStatus(2);
+      playTrackNum(1);
+    }
+
+    // #22-YYYY-MM-DD SET DATE (TO DO)
+    // ---------------------------------------------------------------
+    if(phoneNumber.charAt(0)=='2' && phoneNumber.charAt(1)=='2' && phoneNumber.length()==10) {
+      found = true;
+      setPhoneStatus(3);
+      setTheDate(phoneNumber);  // TO DO
       setPhoneStatus(2);
       playTrackNum(1);
     }
