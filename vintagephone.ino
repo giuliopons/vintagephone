@@ -1467,6 +1467,31 @@ void loop()
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1);
       }
+
+
+      // #3456789 YOUR CUSTOM NUMBER THAT NOT MATCH PREVIOUS NUMBERS
+      // ---------------------------------------------------------------
+      if(phoneNumber=="3456789") {
+        found = true;
+        setPhoneStatus(ANSWERING);
+
+        //
+        // Add your code here
+        // then play your tracks
+        //
+        // use playTrackNum(x, WAIT_END) to play mp3 number x in mp3 folder.
+        // use playTrackFolderNum(x,y, WAIT_END); to play mp3 number y in x folder.
+        // use WAIT_END if you want the process to wait the end of the mp3
+        //
+   
+        setPhoneStatus(CALL_ENDED);
+        playTrackNum(1);
+      }
+      
+
+
+
+      
       
       if(!found) {
         // NUMBER NOT FOUND
@@ -1478,6 +1503,8 @@ void loop()
       }
   
   
+      
+
   
       
      }
