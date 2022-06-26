@@ -74,6 +74,14 @@ bool          ap_active = false;            // global variable for access point 
 #include "FS.h"
 bool    spiffsActive = false;
 
+// Structure for data saved in EEPROM
+struct settings {
+  char ssid[30];
+  char password[30];
+  char lat[9];
+  char lon[9];
+  char utc[30];
+} userdata = {};
 
 
 
@@ -91,15 +99,6 @@ ESP8266WebServer webServer(80);
 
 // SPIFFS AND EEPROM FUNCTIONS
 // -----------------------------------------------------
-
-// Structure for data saved in EEPROM
-struct settings {
-  char ssid[30];
-  char password[30];
-  char lat[9];
-  char lon[9];
-  char utc[30];
-} userdata = {};
 
 // Read file from file system 
 String readFile(String filename) {
@@ -1384,7 +1383,7 @@ void loop()
           playTrackFolderNum(1,70,WAIT_END); // "Setting date and time from internet..."
           setDateTimeFromWeb();
         } else {
-          playTrackNum(18); // "Internet not available"
+          playTrackNum(18,WAIT_END); // "Internet not available"
         }
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1);
@@ -1462,7 +1461,7 @@ void loop()
         if(wifi) {
           tellMeMeteo( phoneNumber );
         } else {
-          playTrackNum(18); // Internet not available
+          playTrackNum(18,WAIT_END); // Internet not available
         }
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1);
