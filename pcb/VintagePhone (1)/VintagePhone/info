@@ -1,0 +1,214 @@
+{
+  "uuid": "768aa35204c68881974c6fe4fc100a46",
+  "path": "Offline/VintagePhone",
+  "name": "VintagePhone",
+  "content": "",
+  "created_at": "2023-03-29 14:14:01",
+  "updated_at": "2023-04-01 12:50:51",
+  "stick": "",
+  "documents": [
+    {
+      "uuid": "bd22bd03084e3e92956582e0ea155ebe",
+      "title": "Sheet_1",
+      "description": "",
+      "docType": "1",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "9767353da8fb467eae0ae13dcbfd8428": 1,
+        "7daffb4b8c141c8e53958b0ec1d33f3b": 1,
+        "f3392fbfe5a549d0bd08e9ce8a65892d": 1,
+        "8cb0931e7aee4571ab281a4f2e7b6e80": 6,
+        "486123a4bb814705bb1a3164561bb535": 3
+      },
+      "BOM": [
+        [
+          "Value",
+          "Quantity",
+          "Package",
+          "Components",
+          "CustomPara"
+        ],
+        [
+          "Alimentazione",
+          1,
+          "CONN-TH_2P-P5.00",
+          "5V_3A",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "be1b3456245c4373bfecde52b7e1b1d6",
+            "uuid": "8cb0931e7aee4571ab281a4f2e7b6e80"
+          }
+        ],
+        [
+          "Bells",
+          2,
+          "CONN-TH_2P-P5.00",
+          "12V,BELLS",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "be1b3456245c4373bfecde52b7e1b1d6",
+            "uuid": "8cb0931e7aee4571ab281a4f2e7b6e80"
+          }
+        ],
+        [
+          "Audio",
+          1,
+          "CONN-TH_2P-P5.00",
+          "AUDIO",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "be1b3456245c4373bfecde52b7e1b1d6",
+            "uuid": "8cb0931e7aee4571ab281a4f2e7b6e80"
+          }
+        ],
+        [
+          "DFPLAYER",
+          1,
+          "DFPLAYER",
+          "DFPLAYER",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "961b73f99bba499baf48d554ccb9a523",
+            "uuid": "9767353da8fb467eae0ae13dcbfd8428"
+          }
+        ],
+        [
+          "L293D",
+          1,
+          "DIP-16_L20.0-W6.4-P2.54-LS7.6-BL",
+          "L293D",
+          {
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "ST(意法半导体)",
+            "BOM_Manufacturer Part": "L293D",
+            "BOM_Supplier Part": "C12340",
+            "BOM_JLCPCB Part Class": "Extended Part",
+            "puuid": "f2561f0fa47346d3a02d341f9e29ef9e",
+            "uuid": "7daffb4b8c141c8e53958b0ec1d33f3b"
+          }
+        ],
+        [
+          "1k",
+          1,
+          "R_AXIAL-0.5",
+          "R1",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "e46b9352a8354a20870bdcdcb288663a",
+            "uuid": "486123a4bb814705bb1a3164561bb535"
+          }
+        ],
+        [
+          "330",
+          1,
+          "R_AXIAL-0.5",
+          "R2",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "e46b9352a8354a20870bdcdcb288663a",
+            "uuid": "486123a4bb814705bb1a3164561bb535"
+          }
+        ],
+        [
+          "10k",
+          1,
+          "R_AXIAL-0.5",
+          "R3",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "e46b9352a8354a20870bdcdcb288663a",
+            "uuid": "486123a4bb814705bb1a3164561bb535"
+          }
+        ],
+        [
+          "Rotary",
+          1,
+          "CONN-TH_2P-P5.00",
+          "ROTARY",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "be1b3456245c4373bfecde52b7e1b1d6",
+            "uuid": "8cb0931e7aee4571ab281a4f2e7b6e80"
+          }
+        ],
+        [
+          "Switch",
+          1,
+          "CONN-TH_2P-P5.00",
+          "SWITCH",
+          {
+            "BOM_Supplier Part": "",
+            "BOM_Supplier": "LCSC",
+            "BOM_Manufacturer": "",
+            "BOM_Manufacturer Part": "",
+            "puuid": "be1b3456245c4373bfecde52b7e1b1d6",
+            "uuid": "8cb0931e7aee4571ab281a4f2e7b6e80"
+          }
+        ],
+        [
+          "WEMOS-D1-MINI",
+          1,
+          "WEMOS-D1-MINI",
+          "WEMOS",
+          {
+            "BOM_Manufacturer Part": "",
+            "puuid": "e73e8572f25b4f77a5e2957b94387d7e",
+            "uuid": "f3392fbfe5a549d0bd08e9ce8a65892d"
+          }
+        ]
+      ],
+      "updateTime": 1680344922,
+      "createTime": 1680092042,
+      "histories": [],
+      "created_at": "2023-03-29 14:14:02",
+      "updated_at": "2023-04-01 12:28:42"
+    },
+    {
+      "uuid": "28c4097d389b32309f5277ba7b3017c9",
+      "puuid": "768aa35204c68881974c6fe4fc100a46",
+      "title": "PCB_VintagePhone",
+      "filename": "PCB_VintagePhone.json",
+      "description": "",
+      "docType": "3",
+      "master": "",
+      "thumb": "/images/thumb-default.png",
+      "components": {
+        "be1b3456245c4373bfecde52b7e1b1d6": 6,
+        "961b73f99bba499baf48d554ccb9a523": 1,
+        "f2561f0fa47346d3a02d341f9e29ef9e": 1,
+        "e46b9352a8354a20870bdcdcb288663a": 3,
+        "e73e8572f25b4f77a5e2957b94387d7e": 1
+      },
+      "BOM": [],
+      "updateTime": 1680346251,
+      "createTime": 1680345965,
+      "histories": [],
+      "created_at": "2023-04-01 12:46:05",
+      "updated_at": "2023-04-01 12:50:51"
+    }
+  ],
+  "sort": [],
+  "title": "VintagePhone",
+  "foldername": "VintagePhone",
+  "schfilename": "VintagePhone.json",
+  "schfilemtime": 1680344922477
+}

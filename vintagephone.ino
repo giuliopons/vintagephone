@@ -10,14 +10,22 @@
 // MP3 PLAYER
 // ----------------------------------------------------
 #include <SoftwareSerial.h>
-#include <DFMiniMp3.h>     /* 1.07 */
+#include <DFMiniMp3.h>     /* 1.1.1 */
+class Mp3Notify;
 #define WAIT_END true
-#define VOLUME 15
+#define VOLUME 20
 #define PIN_RX_MP3 D6
 #define PIN_TX_MP3 D5
 int playing = 0;
 int mp3_error_code;
 
+
+// instance a DFMiniMp3 object, talking to wemos on two pins serial communication.
+SoftwareSerial secondarySerial(PIN_RX_MP3, PIN_TX_MP3); // RX, TX
+//DFMiniMp3<SoftwareSerial, Mp3Notify> dfmp3(secondarySerial);
+typedef DFMiniMp3<SoftwareSerial, Mp3Notify> DfMp3; 
+
+DfMp3 dfmp3(secondarySerial);
 
 
 // PHONE STATUS
@@ -166,8 +174,11 @@ boolean tryWifi(int sec) {
   WiFi.begin(userdata.ssid, userdata.password);
 
   byte tries = 0;
+  byte onOffLed = 0;
   while (WiFi.status() != WL_CONNECTED) {
+    onOffLed++;
     Serial.print(".");
+    if(onOffLed % 2==1) digitalWrite(D4, LOW); else digitalWrite(D4, HIGH);
     delay(1000);
     if (tries++ > sec) {
       // fail to connect
@@ -374,6 +385,7 @@ String getTimeFromInternet(String host) {
       }
     }
   }
+  return "";
 }
 
 // print date time object
@@ -490,7 +502,8 @@ public:
     }
     //Serial.println(action);
   }
-  static void OnError(uint16_t errorCode)
+  //static void OnError(uint16_t errorCode)
+  static void OnError([[maybe_unused]] DfMp3& mp3, uint16_t errorCode)
   {
     // see DfMp3_Error for code meaning
     Serial.println();
@@ -498,24 +511,30 @@ public:
     Serial.println(errorCode);
     mp3_error_code = errorCode;
   }
-  static void OnPlayFinished(DfMp3_PlaySources source, uint16_t track)
+  //static void OnPlayFinished(DfMp3_PlaySources source, uint16_t track)
+  static void OnPlayFinished([[maybe_unused]] DfMp3& mp3, [[maybe_unused]] DfMp3_PlaySources source, uint16_t track)
   {
     Serial.print("Play finished for #");
     Serial.println(track);  
     playing = 0;
     mp3_error_code = 0;
   }
-  static void OnPlaySourceOnline(DfMp3_PlaySources source)
+  static void OnPlaySourceOnline([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
+  //static void OnPlaySourceOnline(DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "online");
     mp3_error_code = 0;
   }
-  static void OnPlaySourceInserted(DfMp3_PlaySources source)
+
+  //static void OnPlaySourceInserted(DfMp3_PlaySources source)
+  static void OnPlaySourceInserted([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
+
   {
     PrintlnSourceAction(source, "inserted");
     mp3_error_code = 0;
   }
-  static void OnPlaySourceRemoved(DfMp3_PlaySources source)
+  //  static void OnPlaySourceRemoved(DfMp3_PlaySources source)
+  static void OnPlaySourceRemoved([[maybe_unused]] DfMp3& mp3, DfMp3_PlaySources source)
   {
     PrintlnSourceAction(source, "removed");
     mp3_error_code = 0;
@@ -524,10 +543,6 @@ public:
 
 
 
-
-// instance a DFMiniMp3 object, talking to wemos on two pins serial communication.
-SoftwareSerial secondarySerial(PIN_RX_MP3, PIN_TX_MP3); // RX, TX
-DFMiniMp3<SoftwareSerial, Mp3Notify> dfmp3(secondarySerial);
 
 
 // Play a track from a numbered folder
@@ -773,6 +788,28 @@ int translateMeteoCode(byte i){
 }
 
 
+// NOT USED
+void logTelegram(String s, String chat_id, String apiToken) {
+  WiFiClient client;
+  if (!client.connect("api.telegram.org", 80)) {
+    Serial.println(F("Connection failed"));
+    return;
+  }
+  https://api.telegram.org/bot".$apiToken."/sendmessage?chat_id=".$chatId."&text=".rawurlencode($testo)."&parse_mode=HTML
+  String o = F("GET /bot#apitoken#/sendmessage?chat_id=#chatid#&text=#s#&parse_mode=HTML HTTP/1.0");
+  o.replace("#chatid#", chat_id);
+  o.replace("#s#", s);
+  o.replace("#apitoken#", apiToken);
+  client.println(o);
+  client.println(F("Host: api.telegram.org"));
+  client.println(F("Connection: close"));
+  if (client.println() == 0) {
+    Serial.println(F("Failed to send request"));
+    client.stop();
+    return;
+  }
+}
+
 
 void tellMeMeteo(String pn) {
 
@@ -917,7 +954,6 @@ String midString(String str, String startTag, String finishTag){
 
 
 
-
 //
 // Ring the bells!
 // Make a alternate square wave on bells coil with 2 pin and L293D driver
@@ -926,17 +962,21 @@ void bells() {
   setPhoneStatus( RINGING );
   while(phoneStatus==RINGING && maxRings>=1) {
     int i = 0;
-    Serial.println("Ring");
+    int d = 20;
+    Serial.print("Ring");
     while(phoneStatus==RINGING && i<30) {
       digitalWrite(PIN_BELL_2,LOW);
       digitalWrite(PIN_BELL_1,HIGH);
-      delay(20);
+      delay(d);
       digitalWrite(PIN_BELL_2,HIGH);
       digitalWrite(PIN_BELL_1,LOW);
-      delay(20);
+      delay(d);
       checkHangStatus();
       i++;
     }
+    
+    
+    
     digitalWrite(PIN_BELL_2,LOW);
     unsigned long ti = millis() + 2000;
     while(phoneStatus== RINGING && millis()<ti){
@@ -1105,6 +1145,7 @@ void setTheAlarm(String numberDialed) {
 
 void setup() {
   Serial.begin(115200);
+  while(!Serial);
   Serial.println("-----------------------");
   Serial.println("Welcome to Vintagephone");
   Serial.println("-----------------------");
@@ -1174,9 +1215,13 @@ void setup() {
   dfmp3.setVolume(VOLUME);
   uint16_t count = dfmp3.getTotalTrackCount(DfMp3_PlaySource_Sd);
   Serial.println("files found " + (String)count);
-
+  
+  uint16_t mode = dfmp3.getPlaybackMode();
 
   
+
+  //while(true) bells();
+
 
   //
   // Setup the WEMOS UPDATE OVER THE AIR process
@@ -1229,6 +1274,9 @@ void loop()
   // necessary to understand the phone status
   checkHangStatus();
 
+    //setPhoneStatus( RINGING ); //ring
+    //bells();
+    
   //
   // this function of the DFMINI player
   // object handles the communication with
@@ -1254,14 +1302,16 @@ void loop()
   // the dfmp3 library sometimes shows a Com Error
   // while communicating with the mp3 player. If this
   // happens this code tries to solve the Com Error 3
-  if(mp3_error_code == 3) {
+  /*
+    if(mp3_error_code == 3) {
     Serial.println(".....");
     mp3_error_code = 0;
     dfmp3.begin();dfmp3.reset();dfmp3.setVolume(VOLUME);
     delay(200);
   }
+  */
 
-
+ // Serial.println(phoneStatus);
 
 
 
@@ -1347,7 +1397,7 @@ void loop()
   
   
       
-      // #2 ALARM DELETED
+      // #2 DELETE ALARM
       // ---------------------------------------------------------------
       if(phoneNumber=="2") {
         found = true;
@@ -1466,6 +1516,9 @@ void loop()
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1);
       }
+
+
+
 
 
       // #3456789 YOUR CUSTOM NUMBER THAT NOT MATCH PREVIOUS NUMBERS
