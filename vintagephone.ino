@@ -13,7 +13,7 @@
 #include <DFMiniMp3.h>     /* 1.1.1 */
 class Mp3Notify;
 #define WAIT_END true
-#define VOLUME 20
+#define VOLUME 24
 #define PIN_RX_MP3 D6
 #define PIN_TX_MP3 D5
 int playing = 0;
