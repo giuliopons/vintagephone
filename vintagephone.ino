@@ -18,7 +18,9 @@ class Mp3Notify;
 #define PIN_TX_MP3 D5
 int playing = 0;
 int mp3_error_code;
-
+byte DELAY_RING = 30; // millis between left and right bell
+byte RINGTONES_BEFORE_ANSWER = 1;
+byte DEFAULT_RINGBELLS_REPEAT = 5;
 
 // instance a DFMiniMp3 object, talking to wemos on two pins serial communication.
 SoftwareSerial secondarySerial(PIN_RX_MP3, PIN_TX_MP3); // RX, TX
@@ -56,7 +58,7 @@ String caller_1="";
 // WEMOS LIBRARIES
 // ---------------------------------------------------
 
-const char*   projectname = "vintagephone"; // configrable name of the AP network
+char projectname[50];
 
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
@@ -182,11 +184,13 @@ boolean tryWifi(int sec) {
     delay(1000);
     if (tries++ > sec) {
       // fail to connect
+      digitalWrite(D4, HIGH);
       Serial.println("");
       return false;
     }
   }
   Serial.println("");
+  digitalWrite(D4, HIGH);
   return true; 
 }
 
@@ -357,8 +361,8 @@ void setupPortal() {
 // read the time from the header of a http request
 String getTimeFromInternet(String host) {
   WiFiClient client;
-  while (!!!client.connect(host.c_str(), 80)) {
-    Serial.println("connection failed, retrying...");
+  while (!client.connect(host.c_str(), 80)) {
+    Serial.println(F("Connection failed"));
   }
 
   client.print("HEAD / HTTP/1.1\r\n\r\n");
@@ -817,10 +821,9 @@ void tellMeMeteo(String pn) {
   playTrackFolderNum(3,45);  // play a jingle and do not wait end, so we can make api calls in background 
   
   WiFiClient client;
-  
-  if (!client.connect("api.open-meteo.com", 80)) {
+
+  while (!client.connect("api.open-meteo.com", 80)) {
     Serial.println(F("Connection failed"));
-    return;
   }
 
   // Send HTTP request
@@ -957,12 +960,11 @@ String midString(String str, String startTag, String finishTag){
 //
 // Ring the bells!
 // Make a alternate square wave on bells coil with 2 pin and L293D driver
-void bells() {
-  int maxRings = 5;
+void bells( int maxRings ) {
   setPhoneStatus( RINGING );
   while(phoneStatus==RINGING && maxRings>=1) {
     int i = 0;
-    int d = 20;
+    int d = DELAY_RING;
     Serial.print("Ring");
     while(phoneStatus==RINGING && i<30) {
       digitalWrite(PIN_BELL_2,LOW);
@@ -996,7 +998,7 @@ void bells() {
 
 
 // answer arrives after 1 or 2 sounds
-void waitingForAnswer() { for(int i=0;i<random(1,3);i++) { playTrackNum(7, WAIT_END); }}
+void waitingForAnswer() { for(int i=0;i<RINGTONES_BEFORE_ANSWER;i++) { playTrackNum(7, WAIT_END); }}
 
 //
 // print phone status, avoid multiple same status prints
@@ -1077,7 +1079,16 @@ void tellTheTimePassed(String numberDialed) {
 //
 // set the timer for alarm and tell the alarm just setted
 void setTheAlarm(String numberDialed) {
+ 
     caller_1 = numberDialed;
+    
+    if(numberDialed=="9") {
+      // rings after 5 seconds
+      timer_1 = millis() + 5000;
+      playTrackNum(1);
+      
+    }
+    
     if(numberDialed.length()>1 && phoneNumber.length()<=4) {
       // dialed 1XXX, alarm in XXX minutes
       unsigned long minutesD = strtoul(numberDialed.c_str(), NULL, 10); 
@@ -1149,6 +1160,10 @@ void setup() {
   Serial.println("-----------------------");
   Serial.println("Welcome to Vintagephone");
   Serial.println("-----------------------");
+  uint32_t chipId = ESP.getChipId();
+  sprintf(projectname, "vintagephone_%X", chipId);
+  Serial.println(projectname);
+  
 
   //
   // Configure pins that are connected to
@@ -1157,6 +1172,7 @@ void setup() {
   pinMode(PIN_HANGUP_SWITCH, INPUT_PULLUP);
   pinMode(PIN_BELL_1,OUTPUT);
   pinMode(PIN_BELL_2,OUTPUT);
+
 
 
   //
@@ -1220,7 +1236,7 @@ void setup() {
 
   
 
-  //while(true) bells();
+  
 
 
   //
@@ -1274,8 +1290,8 @@ void loop()
   // necessary to understand the phone status
   checkHangStatus();
 
-    //setPhoneStatus( RINGING ); //ring
-    //bells();
+   //setPhoneStatus( RINGING ); //ring
+   //bells();
     
   //
   // this function of the DFMINI player
@@ -1311,7 +1327,6 @@ void loop()
   }
   */
 
- // Serial.println(phoneStatus);
 
 
 
@@ -1333,7 +1348,7 @@ void loop()
   // ALARM TIME CHECK
   if ( timer_1 >0 &&  millis()> timer_1 && phoneStatus==HANDSET_DOWN) {
     setPhoneStatus( RINGING ); //ring
-    bells();
+    bells( caller_1 == "9" ? 999 : DEFAULT_RINGBELLS_REPEAT );
   }
 
   //
@@ -1389,7 +1404,6 @@ void loop()
         if(phoneNumber.length()>1 && phoneNumber.length()<=5) {
             // SET ALARM WITH MINUTES OR WITH HOURS AND MINUTES
             setTheAlarm(phoneNumber);
-            
         }
         setPhoneStatus( CALL_ENDED );
         playTrackNum(1);
@@ -1518,8 +1532,15 @@ void loop()
       }
 
 
-
-
+      // #9  RING BELLS AFTER 5 SECONDS (TEST ROUTINE)
+      // ---------------------------------------------------------------
+      if(phoneNumber=="9") {
+        setPhoneStatus( ANSWERING);
+        found = true;
+        setTheAlarm(phoneNumber);
+        setPhoneStatus( CALL_ENDED );
+        playTrackNum(1);
+      }
 
       // #3456789 YOUR CUSTOM NUMBER THAT NOT MATCH PREVIOUS NUMBERS
       // ---------------------------------------------------------------
