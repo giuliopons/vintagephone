@@ -21,6 +21,7 @@ int mp3_error_code;
 byte DELAY_RING = 30; // millis between left and right bell
 byte RINGTONES_BEFORE_ANSWER = 1;
 byte DEFAULT_RINGBELLS_REPEAT = 5;
+byte SWITCH_REVERSE = 0;
 
 // instance a DFMiniMp3 object, talking to wemos on two pins serial communication.
 SoftwareSerial secondarySerial(PIN_RX_MP3, PIN_TX_MP3); // RX, TX
@@ -1020,6 +1021,10 @@ void checkHangStatus(){
   byte switchStatus;
   switchStatus = digitalRead(PIN_HANGUP_SWITCH);  // 0 = OPEN, PICK UP - 1 = CLOSE, HUNG UP
 
+  if(SWITCH_REVERSE==1) {
+     switchStatus = !switchStatus;
+  }
+
   if (phoneStatus== RINGING && switchStatus==0) {
     // pick up during ringing
     setPhoneStatus( ANSWERING );
@@ -1043,7 +1048,7 @@ void checkHangStatus(){
     delay(200);
   }
   
-  if (switchStatus==1 && playing==1) {
+  if (switchStatus==1) {
     dfmp3.stop();
     playing=0;
   }
@@ -1163,7 +1168,13 @@ void setup() {
   uint32_t chipId = ESP.getChipId();
   sprintf(projectname, "vintagephone_%X", chipId);
   Serial.println(projectname);
-  
+
+//char chipIdStr[9]; // 8 characters + null terminator
+//snprintf(chipIdStr, sizeof(chipIdStr), "%08X", chipId); 
+
+//   if (strcmp(chipIdStr, "D40E34") == 0) {
+//    SWITCH_REVERSE = 1;
+//  }
 
   //
   // Configure pins that are connected to
@@ -1236,7 +1247,7 @@ void setup() {
 
   
 
-  
+  Serial.println("Status is: " + (String)phoneStatus);
 
 
   //
@@ -1291,7 +1302,10 @@ void loop()
   checkHangStatus();
 
    //setPhoneStatus( RINGING ); //ring
-   //bells();
+   //bells(999);
+
+
+
     
   //
   // this function of the DFMINI player
@@ -1513,7 +1527,20 @@ void loop()
         playTrackNum(1);
       }
   
-  
+      // #26 PICK RANDOM FILE IN FOLDER 4
+      // ---------------------------------------------------------------
+      if(!found && phoneNumber=="26") {
+        found = true;
+
+        int maxRand = 4 + 1;
+                
+        setPhoneStatus(ANSWERING);
+        int r = random(1,maxRand);
+        playTrackFolderNum(4,r,WAIT_END);
+        Serial.println("r = " + (String)r);
+        setPhoneStatus(CALL_ENDED);
+        playTrackNum(1);
+      }  
   
   
   
