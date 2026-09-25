@@ -306,6 +306,13 @@ void handleFormSettings() {
   
 }
 
+// TEMPORARY (HANDOFF part 0): heap figures, remove before committing
+void handleHeap() {
+  char b[64];
+  snprintf_P(b, sizeof(b), PSTR("free=%u maxblock=%u frag=%u"), ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), ESP.getHeapFragmentation());
+  webServer.send(200, "text/plain", b);
+}
+
 // AP PORTAL: setup the portal
 void setupPortal() {
       Serial.println();
@@ -1257,7 +1264,12 @@ void setup() {
   ArduinoOTA.begin();
   // -----------------------------------------------
 
-  
+  // TEMPORARY (HANDOFF part 0): serve heap figures at http://<ip>/heap, remove before committing
+  if(wifi) {
+    webServer.on("/heap", handleHeap);
+    webServer.begin();
+  }
+
 }
 
 
@@ -1276,6 +1288,9 @@ void loop()
   // check the status of the hang switch
   // necessary to understand the phone status
   checkHangStatus();
+
+  // TEMPORARY (HANDOFF part 0): serve /heap
+  if(wifi) webServer.handleClient();
 
    //setPhoneStatus( RINGING ); //ring
    //bells(999);
