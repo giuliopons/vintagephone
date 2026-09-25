@@ -970,7 +970,8 @@ void bells( int maxRings ) {
     }
     maxRings--;
   }
-  if (maxRings==0) {
+  if (phoneStatus==RINGING) {
+    // still ringing after the last ring: nobody answered
     setPhoneStatus( HANDSET_DOWN );
     phoneNumber = "";
     timer_1 = 0;    
