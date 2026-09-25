@@ -112,7 +112,7 @@ ESP8266WebServer webServer(80);
 // -----------------------------------------------------
 
 // Read file from file system 
-String readFile(String filename) {
+String readFile(const char* filename) {
   String out="";
   if (spiffsActive) {
     if (SPIFFS.exists(filename)) {
@@ -360,9 +360,9 @@ void setupPortal() {
 // ----------------------------------------------------
 
 // read the time from the header of a http request
-String getTimeFromInternet(String host) {
+String getTimeFromInternet(const char* host) {
   WiFiClient client;
-  while (!client.connect(host.c_str(), 80)) {
+  while (!client.connect(host, 80)) {
     Serial.println(F("Connection failed"));
   }
 
@@ -947,10 +947,10 @@ void tellMeMeteo(String pn) {
 }
 
 // extract string between two tags
-String midString(String str, String startTag, String finishTag){
+String midString(const String& str, const char* startTag, const char* finishTag){
   int locStart = str.indexOf(startTag);
   if (locStart==-1) return "";
-  locStart += startTag.length();
+  locStart += strlen(startTag);
   int locFinish = str.indexOf(finishTag, locStart);
   if (locFinish==-1) return "";
   return str.substring(locStart, locFinish);
