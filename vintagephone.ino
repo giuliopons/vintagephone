@@ -45,6 +45,17 @@ String phoneNumber = ""; // dialed phone numbers
 byte phoneStatus = HANDSET_DOWN;
 
 
+// REMOTE DIAL (HTTP /dial?number=xxxx&key=...)
+// -----------------------------------------------
+// The phone rings REMOTE_DIAL_RINGS times, if the user answers the service
+// for the number xxxx is run as if it was dialed with the rotary dial.
+#define DIAL_KEY "changeme"      // token required by /dial: choose your own, don't commit the real one
+#define REMOTE_DIAL_RINGS 10
+char dialNumber[11] = "";        // number requested via web (max 10 digits, like the dial)
+bool dialPending = false;        // /dial received, loop() must start ringing
+bool remoteCall  = false;        // the call in progress comes from /dial
+
+
 // TIMER
 // --------------------------------------------------
 #include "RTClib.h"
@@ -311,6 +322,35 @@ void handleHeap() {
   char b[64];
   snprintf_P(b, sizeof(b), PSTR("free=%u maxblock=%u frag=%u"), ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), ESP.getHeapFragmentation());
   webServer.send(200, "text/plain", b);
+}
+
+// REMOTE DIAL: /dial?number=xxxx&key=...
+// Answers right away (it only validates and queues the request), loop() makes the phone ring.
+// 200 ringing / 400 bad number / 403 bad key / 409 phone busy
+void handleDial() {
+  if (strcmp_P(webServer.arg("key").c_str(), PSTR(DIAL_KEY)) != 0) {
+    webServer.send_P(403, PSTR("text/plain"), PSTR("forbidden"));
+    return;
+  }
+
+  const String& n = webServer.arg("number");
+  bool valid = n.length() >= 1 && n.length() < sizeof(dialNumber) && n != "21" && n != "23"; // 21 restart, 23 AP: not allowed
+  for (unsigned int i = 0; valid && i < n.length(); i++) {
+    if (n.charAt(i) < '0' || n.charAt(i) > '9') valid = false;
+  }
+  if (!valid) {
+    webServer.send_P(400, PSTR("text/plain"), PSTR("bad number"));
+    return;
+  }
+
+  if (ap_active || dialPending || phoneStatus != HANDSET_DOWN) {
+    webServer.send_P(409, PSTR("text/plain"), PSTR("busy"));
+    return;
+  }
+
+  strlcpy(dialNumber, n.c_str(), sizeof(dialNumber));
+  dialPending = true;
+  webServer.send_P(200, PSTR("text/plain"), PSTR("ringing"));
 }
 
 // AP PORTAL: setup the portal
@@ -1000,6 +1040,10 @@ void setPhoneStatus(byte newStatus) {
 // check if the handset is hanged up or picked up
 // this action changes the status of the vintagephone
 void checkHangStatus(){
+  // this is called by every waiting loop, so the web server (/dial) is served
+  // also during calls, where it answers "busy" instead of timing out
+  if (wifi) webServer.handleClient();
+
   byte switchStatus;
   switchStatus = digitalRead(PIN_HANGUP_SWITCH);  // 0 = OPEN, PICK UP - 1 = CLOSE, HUNG UP
 
@@ -1010,7 +1054,7 @@ void checkHangStatus(){
   if (phoneStatus== RINGING && switchStatus==0) {
     // pick up during ringing
     setPhoneStatus( ANSWERING );
-    phoneNumber = caller_1;
+    if (remoteCall) phoneNumber = dialNumber; else phoneNumber = caller_1;
     delay(200);
     // stop bells and answer
     
@@ -1474,9 +1518,12 @@ void setup() {
   ArduinoOTA.begin();
   // -----------------------------------------------
 
-  // TEMPORARY (HANDOFF part 0): serve heap figures at http://<ip>/heap, remove before committing
+  //
+  // Web server in station mode: only /dial. The portal pages (that show the wifi password)
+  // are registered by setupPortal() only, so they are never exposed on the home network.
   if(wifi) {
-    webServer.on("/heap", handleHeap);
+    webServer.on("/dial", handleDial);
+    webServer.on("/heap", handleHeap);  // TEMPORARY (HANDOFF part 0): heap figures, remove before committing
     webServer.begin();
   }
 
@@ -1497,10 +1544,8 @@ void loop()
   //
   // check the status of the hang switch
   // necessary to understand the phone status
+  // (it also serves the web server, see checkHangStatus)
   checkHangStatus();
-
-  // TEMPORARY (HANDOFF part 0): serve /heap
-  if(wifi) webServer.handleClient();
 
    //setPhoneStatus( RINGING ); //ring
    //bells(999);
@@ -1568,23 +1613,42 @@ void loop()
   }
 
   //
-  // 3 = ANSWERING
-  // answer to the alarm
-  if (phoneStatus== ANSWERING && phoneNumber!="") {
-    if(phoneNumber.charAt(0)=='1') {
-      // 
-      if(phoneNumber.length()<5) {
-        makeSilenceFor(1);
-        tellTheTimePassed(phoneNumber);
-      }
-      if(phoneNumber.length()==5) {
-        makeSilenceFor(1);
-        playTrackFolderNum(1,65,WAIT_END); 
-        tellTheTime();
-      }
+  // REMOTE DIAL (/dial)
+  // ring the phone, if the user answers the service is run below (ANSWERING)
+  if (dialPending) {
+    dialPending = false;
+    if (phoneStatus==HANDSET_DOWN) {   // if someone picked up meanwhile, the request is dropped
+      remoteCall = true;
+      bells( REMOTE_DIAL_RINGS );
+      if (phoneStatus!=ANSWERING) remoteCall = false;   // nobody answered
     }
-    setPhoneStatus( CALL_ENDED );
-    playTrackNum(1);
+  }
+
+  //
+  // 3 = ANSWERING
+  // answer to the alarm, or to the call started by /dial
+  if (phoneStatus== ANSWERING && phoneNumber!="") {
+    if (remoteCall) {
+      // the user answered a /dial call: run the requested service
+      remoteCall = false;
+      makeSilenceFor(1);
+      if (phoneStatus==ANSWERING) runPhoneNumber();   // (not if the user already hung up)
+    } else {
+      if(phoneNumber.charAt(0)=='1') {
+        //
+        if(phoneNumber.length()<5) {
+          makeSilenceFor(1);
+          tellTheTimePassed(phoneNumber);
+        }
+        if(phoneNumber.length()==5) {
+          makeSilenceFor(1);
+          playTrackFolderNum(1,65,WAIT_END);
+          tellTheTime();
+        }
+      }
+      setPhoneStatus( CALL_ENDED );
+      playTrackNum(1);
+    }
   }
 
 
