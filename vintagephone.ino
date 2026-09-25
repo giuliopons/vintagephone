@@ -325,8 +325,9 @@ void handleHeap() {
 }
 
 // REMOTE DIAL: /dial?number=xxxx&key=...
-// Answers right away (it only validates and queues the request), loop() makes the phone ring.
-// 200 ringing / 400 bad number / 403 bad key / 409 phone busy
+// Answers right away. Most numbers are queued and loop() makes the phone ring; if the user
+// answers, the service runs. The alarm numbers (see isSilentNumber) are run at once, no ringing.
+// 200 ringing / 200 alarm set / 200 alarm deleted / 400 bad number / 400 bad time / 403 bad key / 409 phone busy
 void handleDial() {
   if (strcmp_P(webServer.arg("key").c_str(), PSTR(DIAL_KEY)) != 0) {
     webServer.send_P(403, PSTR("text/plain"), PSTR("forbidden"));
@@ -340,6 +341,26 @@ void handleDial() {
   }
   if (!valid) {
     webServer.send_P(400, PSTR("text/plain"), PSTR("bad number"));
+    return;
+  }
+
+  if (isSilentNumber(n)) {
+    // alarm numbers: no ringing. Only with the handset down, or the confirmation would be spoken in another call.
+    if (n.length() == 5 && ((n.charAt(1) - '0') * 10 + (n.charAt(2) - '0') > 23 || (n.charAt(3) - '0') * 10 + (n.charAt(4) - '0') > 59)) {
+      webServer.send_P(400, PSTR("text/plain"), PSTR("bad time"));
+      return;
+    }
+    if (ap_active || phoneStatus != HANDSET_DOWN) {
+      webServer.send_P(409, PSTR("text/plain"), PSTR("busy"));
+      return;
+    }
+    if (n == "2") {
+      deleteAlarm();
+      webServer.send_P(200, PSTR("text/plain"), PSTR("alarm deleted"));
+    } else {
+      setTheAlarm(n);   // with the handset down it doesn't play anything
+      webServer.send_P(200, PSTR("text/plain"), PSTR("alarm set"));
+    }
     return;
   }
 
@@ -1119,7 +1140,7 @@ void setTheAlarm(String numberDialed) {
       
     }
     
-    if(numberDialed.length()>1 && phoneNumber.length()<=4) {
+    if(numberDialed.length()>1 && numberDialed.length()<=4) {
       // dialed 1XXX, alarm in XXX minutes
       unsigned long minutesD = strtoul(numberDialed.c_str(), NULL, 10); 
       minutesD =  minutesD - pow(10,numberDialed.length() - 1);
@@ -1182,6 +1203,20 @@ void setTheAlarm(String numberDialed) {
 }
 
 
+// delete the alarm (no audio)
+void deleteAlarm() {
+  timer_1 = 0;
+  caller_1 = "";
+}
+
+
+// Numbers that only change the alarm: /dial runs them right away, without ringing
+// (nobody has to answer). "2" deletes the alarm, "1" + 1..4 digits sets it
+// ("15", "1005" = in 5 minutes, "10730" = at 07:30).
+bool isSilentNumber(const String& n) {
+  return n == "2" || (n.charAt(0) == '1' && n.length() >= 2 && n.length() <= 5);
+}
+
 
 
 // Run the service that matches the number stored in phoneNumber.
@@ -1221,8 +1256,7 @@ void runPhoneNumber() {
   // ---------------------------------------------------------------
   if(phoneNumber=="2") {
     found = true;
-    timer_1 = 0;
-    caller_1="";
+    deleteAlarm();
     setPhoneStatus( ANSWERING );
     playTrackFolderNum(1,64,WAIT_END); // Sveglia cancellata
     setPhoneStatus( CALL_ENDED );
