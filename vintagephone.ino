@@ -629,7 +629,7 @@ void readNumberDialed() {
         // line and reset the count. We mod the count by 10 because '0' will send 10 pulses.
         Serial.print(F("("));Serial.print(count % 10, DEC);Serial.println(F(")"));
         digits++;
-        phoneNumber += (String)(count % 10);
+        phoneNumber += (char)('0' + count % 10);
         needToPrint = 0;
         count = 0;
         cleared = 0;
