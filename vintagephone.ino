@@ -324,6 +324,15 @@ void handleHeap() {
   webServer.send(200, "text/plain", b);
 }
 
+// /hello in station mode: is the phone online? Device name and uptime (seconds) as json,
+// e.g. {"name":"vintagephone_D40E34","uptime":3600}. "/" is left to the AP portal.
+void handleHello() {
+  char b[80];
+  // micros64() doesn't overflow after 49 days like millis()
+  snprintf_P(b, sizeof(b), PSTR("{\"name\":\"%s\",\"uptime\":%lu}"), projectname, (unsigned long)(micros64() / 1000000ULL));
+  webServer.send(200, "application/json", b);
+}
+
 // REMOTE DIAL: /dial?number=xxxx&key=...
 // Answers right away. Most numbers are queued and loop() makes the phone ring; if the user
 // answers, the service runs. The alarm numbers (see isSilentNumber) are run at once, no ringing.
@@ -1324,7 +1333,10 @@ void runPhoneNumber() {
     playTrackNum(1,WAIT_END);
     Serial.println(F("AP"));
     setupPortal();
-    connectToWifi();
+    // The portal leaves the wifi in AP mode and its routes (/wifisetup shows the password) registered:
+    // restart to reconnect to the home wifi with a clean web server. The delay lets the "stop AP" page reach the browser.
+    delay(1000);
+    ESP.restart();
   }
 
 
@@ -1553,9 +1565,10 @@ void setup() {
   // -----------------------------------------------
 
   //
-  // Web server in station mode: only /dial. The portal pages (that show the wifi password)
+  // Web server in station mode: /hello (name and uptime) and /dial. The portal pages (that show the wifi password)
   // are registered by setupPortal() only, so they are never exposed on the home network.
   if(wifi) {
+    webServer.on("/hello", handleHello);
     webServer.on("/dial", handleDial);
     webServer.on("/heap", handleHeap);  // TEMPORARY (HANDOFF part 0): heap figures, remove before committing
     webServer.begin();
