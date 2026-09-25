@@ -59,7 +59,7 @@ String caller_1="";
 // WEMOS LIBRARIES
 // ---------------------------------------------------
 
-char projectname[50];
+char projectname[25];   // "vintagephone_" + up to 8 hex digits + NUL = 22
 
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
@@ -1148,7 +1148,7 @@ void setup() {
   Serial.println(F("Welcome to Vintagephone"));
   Serial.println(F("-----------------------"));
   uint32_t chipId = ESP.getChipId();
-  sprintf(projectname, "vintagephone_%X", chipId);
+  snprintf(projectname, sizeof(projectname), "vintagephone_%X", chipId);
   Serial.println(projectname);
 
 //char chipIdStr[9]; // 8 characters + null terminator
