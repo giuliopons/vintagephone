@@ -23,6 +23,20 @@ byte RINGTONES_BEFORE_ANSWER = 1;
 byte DEFAULT_RINGBELLS_REPEAT = 5;
 byte SWITCH_REVERSE = 0;
 
+// #26 picks a random track from this folder of the sd card. setup() counts its tracks (see
+// probeFolderTracks; they must be numbered 001, 002, ... without holes). If the count fails,
+// RANDOM_FOLDER_FALLBACK is used.
+#define RANDOM_FOLDER 4
+#define RANDOM_FOLDER_FALLBACK 4
+uint16_t randomFolderFound = 0;   // tracks found by the count (0 = the count failed)
+uint16_t randomFolderTracks = RANDOM_FOLDER_FALLBACK;  // tracks to pick from
+// TEMPORARY (HANDOFF part 9): why the count failed, shown by /heap
+uint16_t probeTotal = 0;          // tracks of the card, answered by the player at boot
+uint8_t  probeWhy = 9;            // 9 not run, 0 ok, 1 track 255 seems to exist, 2 error on track 255, 3 error in the search
+uint16_t probeErr = 0;            // last error code of a try
+uint16_t probeStat = 0;           // last answer of getStatus()
+uint8_t  probeVol = 255;          // volume read back after the count (must be VOLUME, 255 = not read)
+
 // instance a DFMiniMp3 object, talking to wemos on two pins serial communication.
 SoftwareSerial secondarySerial(PIN_RX_MP3, PIN_TX_MP3); // RX, TX
 //DFMiniMp3<SoftwareSerial, Mp3Notify> dfmp3(secondarySerial);
@@ -319,8 +333,8 @@ void handleFormSettings() {
 
 // TEMPORARY (HANDOFF part 0): heap figures, remove before committing
 void handleHeap() {
-  char b[64];
-  snprintf_P(b, sizeof(b), PSTR("free=%u maxblock=%u frag=%u"), ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), ESP.getHeapFragmentation());
+  char b[128];
+  snprintf_P(b, sizeof(b), PSTR("free=%u maxblock=%u frag=%u f4found=%u f4=%u cnt=%u why=%u err=%u st=%x vol=%u"), ESP.getFreeHeap(), ESP.getMaxFreeBlockSize(), ESP.getHeapFragmentation(), randomFolderFound, randomFolderTracks, probeTotal, probeWhy, probeErr, probeStat, probeVol);
   webServer.send(200, "text/plain", b);
 }
 
@@ -656,6 +670,63 @@ void playTrackNum(uint8_t track,bool waitEnd=false) {
       delay(200);
     }
   }
+}
+
+
+// Does the track exist in the folder? Try to play it (muted: the caller sets the volume to 0).
+// If the player complains that it can't find the file, it doesn't exist. If it says nothing (some modules
+// don't report it) ask the player if it is playing: only an existing track plays.
+// 1 = exists, 0 = doesn't exist, -1 = another error
+int8_t trackExists(uint8_t folder, uint8_t track) {
+  mp3_error_code = 0;
+  dfmp3.playFolderTrack(folder, track);
+  unsigned long t = millis() + 200;
+  while (millis() < t && mp3_error_code == 0) {
+    dfmp3.loop();
+  }
+  probeErr = mp3_error_code;
+  if (mp3_error_code == DfMp3_Error_FileMismatch || mp3_error_code == DfMp3_Error_FileIndexOut) return 0;
+  if (mp3_error_code != 0) return -1;
+
+  probeStat = dfmp3.getStatus();     // low byte: 0 stopped, 1 playing, 2 paused
+  if (mp3_error_code == DfMp3_Error_FileMismatch || mp3_error_code == DfMp3_Error_FileIndexOut) return 0;  // late complaint
+  return (probeStat & 0xFF) == 1 ? 1 : 0;
+}
+
+// Count the tracks (001, 002, ... without holes) of a folder of the sd card, 0 if it can't be done.
+// The player's own "folder track count" command is not used: on our module it numbers the folders
+// in the order they were written to the card, and answers for the wrong one.
+// It first checks that track 255 is seen as missing, then looks for the last existing
+// track with a binary search (about 8 tries, a few seconds at most).
+uint8_t probeFolderTracks(uint8_t folder) {
+  uint8_t lo = 0;      // last track known to exist (0 = none yet)
+  uint8_t hi = 255;    // first track known not to exist
+  bool ok = true;
+  probeWhy = 0;
+
+  dfmp3.setVolume(0);
+  int8_t c = trackExists(folder, hi);
+  if (c != 0) {
+    ok = false;        // track 255 doesn't look missing: can't count this way
+    probeWhy = (c == 1) ? 1 : 2;
+  }
+  while (ok && hi - lo > 1) {
+    uint8_t mid = (lo + hi) / 2;
+    int8_t r = trackExists(folder, mid);
+    if (r < 0) { ok = false; probeWhy = 3; }
+    else if (r == 1) lo = mid;
+    else hi = mid;
+  }
+  dfmp3.stop();
+  delay(300);                          // let the player finish stopping: it can ignore a command sent too early
+  for (byte i = 0; i < 3; i++) {       // restore the volume and check it: setVolume gets no answer, if lost the phone stays mute
+    dfmp3.setVolume(VOLUME);
+    probeVol = dfmp3.getVolume();
+    if (probeVol == VOLUME) break;
+  }
+  playing = 0;
+  mp3_error_code = 0;
+  return ok ? lo : 0;
 }
 
 
@@ -1370,11 +1441,9 @@ void runPhoneNumber() {
   if(!found && phoneNumber=="26") {
     found = true;
 
-    int maxRand = 4 + 1;
-            
     setPhoneStatus(ANSWERING);
-    int r = random(1,maxRand);
-    playTrackFolderNum(4,r,WAIT_END);
+    int r = random(1, randomFolderTracks + 1);
+    playTrackFolderNum(RANDOM_FOLDER,r,WAIT_END);
     Serial.print(F("r = ")); Serial.println(r);
     setPhoneStatus(CALL_ENDED);
     playTrackNum(1);
@@ -1527,6 +1596,15 @@ void setup() {
   Serial.print(F("files found ")); Serial.println(count);
   
   uint16_t mode = dfmp3.getPlaybackMode();
+
+  //
+  // Count the tracks of the folder used by #26 now, so the first #26 has no delay.
+  // Only if the player is up (it has answered with the track count of the card).
+  probeTotal = count;
+  if(count > 0) {
+    randomFolderFound = probeFolderTracks(RANDOM_FOLDER);
+    if(randomFolderFound > 0) randomFolderTracks = randomFolderFound;
+  }
 
   
 

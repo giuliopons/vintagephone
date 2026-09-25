@@ -24,7 +24,7 @@ Numbers you can dial with the rotary dial to get messages and services (the voic
 | `#23` | Activate the Wi-Fi configuration access point (see below) |
 | `#24` | Play heads or tails |
 | `#25` | Say yes or no |
-| `#26` | Randomly announce the name of a family member |
+| `#26` | Randomly announce the name of a family member (a random track of folder `04` of the SD card; the number of tracks is counted at boot: name them `001.mp3`, `002.mp3`, ... with no holes) |
 | `#3456789` | Your custom number: add your code in `runPhoneNumber()` |
 
 Any other number plays a "number not available" message.
