@@ -793,7 +793,7 @@ int translateMeteoCode(byte i){
 }
 
 
-void tellMeMeteo(String pn) {
+void tellMeMeteo() {
 
   // short jingle 
   playTrackFolderNum(3,45);  // play a jingle and do not wait end, so we can make api calls in background 
@@ -1527,7 +1527,7 @@ void loop()
         found = true;
         setPhoneStatus(ANSWERING);
         if(wifi) {
-          tellMeMeteo( phoneNumber );
+          tellMeMeteo();
         } else {
           playTrackNum(18,WAIT_END); // Internet not available
         }
