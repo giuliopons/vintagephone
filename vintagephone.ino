@@ -793,29 +793,6 @@ int translateMeteoCode(byte i){
 }
 
 
-// NOT USED
-void logTelegram(String s, String chat_id, String apiToken) {
-  WiFiClient client;
-  if (!client.connect("api.telegram.org", 80)) {
-    Serial.println(F("Connection failed"));
-    return;
-  }
-  https://api.telegram.org/bot".$apiToken."/sendmessage?chat_id=".$chatId."&text=".rawurlencode($testo)."&parse_mode=HTML
-  String o = F("GET /bot#apitoken#/sendmessage?chat_id=#chatid#&text=#s#&parse_mode=HTML HTTP/1.0");
-  o.replace("#chatid#", chat_id);
-  o.replace("#s#", s);
-  o.replace("#apitoken#", apiToken);
-  client.println(o);
-  client.println(F("Host: api.telegram.org"));
-  client.println(F("Connection: close"));
-  if (client.println() == 0) {
-    Serial.println(F("Failed to send request"));
-    client.stop();
-    return;
-  }
-}
-
-
 void tellMeMeteo(String pn) {
 
   // short jingle 
