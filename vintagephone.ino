@@ -173,7 +173,6 @@ boolean tryWifi(int sec) {
   WiFi.mode(WIFI_STA);
   Serial.println(F("Try wifi"));
   Serial.println(userdata.ssid);
-  Serial.println(userdata.password);
   WiFi.begin(userdata.ssid, userdata.password);
 
   byte tries = 0;
