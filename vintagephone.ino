@@ -974,7 +974,6 @@ void bells( int maxRings ) {
     // still ringing after the last ring: nobody answered
     setPhoneStatus( HANDSET_DOWN );
     phoneNumber = "";
-    timer_1 = 0;    
   }
 }
 
@@ -1012,7 +1011,6 @@ void checkHangStatus(){
     // pick up during ringing
     setPhoneStatus( ANSWERING );
     phoneNumber = caller_1;
-    timer_1 = 0;
     delay(200);
     // stop bells and answer
     
@@ -1352,6 +1350,7 @@ void loop()
   // 4 = HANGEDUP
   // ALARM TIME CHECK
   if ( timer_1 >0 &&  millis()> timer_1 && phoneStatus==HANDSET_DOWN) {
+    timer_1 = 0; // this alarm is consumed, so other calls (bells, pick up) don't have to clear it
     setPhoneStatus( RINGING ); //ring
     bells( caller_1 == "9" ? 999 : DEFAULT_RINGBELLS_REPEAT );
   }
