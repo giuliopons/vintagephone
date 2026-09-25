@@ -454,7 +454,8 @@ byte LegalTime(DateTime now) {
 void setDateTimeFromWeb(){
     String s = getTimeFromInternet("www.google.it");
     char* pch;
-    char *dup = strdup(s.c_str());
+    char dup[40];                                // strtok writes in the string: work on a local copy
+    strlcpy(dup, s.c_str(), sizeof(dup));        // "Thu, 25 Sep 2025 14:35:39 GMT" is 29 chars
     pch = strtok(dup," :");
     int q=0;
     String ladata = "";String laora = "";
@@ -471,10 +472,8 @@ void setDateTimeFromWeb(){
       q++;
     }
 
-    String ladat = ladata.c_str();
-    String laor = laora.c_str();
-    Serial.println(ladat);
-    Serial.println(laor);
+    Serial.println(ladata);
+    Serial.println(laora);
 
     int GMT = 1;
     DateTime n = DateTime(ladata.c_str(),laora.c_str());
