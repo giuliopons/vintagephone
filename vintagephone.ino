@@ -1140,6 +1140,218 @@ void setTheAlarm(String numberDialed) {
 
 
 
+// Run the service that matches the number stored in phoneNumber.
+// Used when the number is dialed with the rotary dial. Every service
+// answers, plays its tracks and ends the call by itself.
+void runPhoneNumber() {
+  //
+  // found is true is number dialed match a service
+  bool found = false;
+
+  
+
+
+
+  // #1   OR  #1[d]{1,3}  OR    #1-HH-MM
+  // ---------------------------------------------------------------
+  if(phoneNumber.charAt(0)=='1' && phoneNumber.length()<=5) {
+    // NUMBER BEGINS WITH 1 TO SET TIME
+    //
+    setPhoneStatus( ANSWERING);
+    found = true;
+    if(phoneNumber.length()==1) {
+        // TELL THE TIME
+        tellTheTime();
+    }
+    if(phoneNumber.length()>1 && phoneNumber.length()<=5) {
+        // SET ALARM WITH MINUTES OR WITH HOURS AND MINUTES
+        setTheAlarm(phoneNumber);
+    }
+    setPhoneStatus( CALL_ENDED );
+    playTrackNum(1);
+  }
+
+
+  
+  // #2 DELETE ALARM
+  // ---------------------------------------------------------------
+  if(phoneNumber=="2") {
+    found = true;
+    timer_1 = 0;
+    caller_1="";
+    setPhoneStatus( ANSWERING );
+    playTrackFolderNum(1,64,WAIT_END); // Sveglia cancellata
+    setPhoneStatus( CALL_ENDED );
+    playTrackNum(1);
+  }
+
+
+
+
+
+  // #21 RESTART WEMOS
+  // ---------------------------------------------------------------
+  if(phoneNumber=="21") {
+    found = true;
+    setPhoneStatus( ANSWERING );
+    playTrackNum(17,WAIT_END); // Restarting...
+    setPhoneStatus( CALL_ENDED);
+    ESP.restart();
+    
+  }
+
+  // #22 GET TIME FROM INTERNET AGAIN
+  // ---------------------------------------------------------------
+  if(phoneNumber=="22") {
+    found = true;
+    setPhoneStatus(ANSWERING);
+    if(wifi) {
+      playTrackFolderNum(1,70,WAIT_END); // "Setting date and time from internet..."
+      setDateTimeFromWeb();
+    } else {
+      playTrackNum(18,WAIT_END); // "Internet not available"
+    }
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+    
+  }
+
+  // #22-HH-MM SET TIME
+  // ---------------------------------------------------------------
+  if(phoneNumber.charAt(0)=='2' && phoneNumber.charAt(1)=='2' && phoneNumber.length()==6) {
+    found = true;
+    setPhoneStatus(ANSWERING);
+    setTheTime(phoneNumber);
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }
+
+  // #22-YYYY-MM-DD SET DATE (TO DO)
+  // ---------------------------------------------------------------
+  if(phoneNumber.charAt(0)=='2' && phoneNumber.charAt(1)=='2' && phoneNumber.length()==10) {
+    found = true;
+    setPhoneStatus(ANSWERING);
+    setTheDate(phoneNumber);  // TO DO (mp3 answer not completed)
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }
+
+  // #23 ACTIVATE AP
+  // ---------------------------------------------------------------
+  if(!found && phoneNumber=="23") {
+    found = true;
+    setPhoneStatus(ANSWERING);
+    playTrackNum(19,WAIT_END); // AP attivo cerca Vintagephone...
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1,WAIT_END);
+    Serial.println(F("AP"));
+    setupPortal();
+    connectToWifi();
+  }
+
+
+  // #24 HEADS OR TAILS
+  // ---------------------------------------------------------------
+  if(!found && phoneNumber=="24") {
+    found = true;
+    setPhoneStatus(ANSWERING);
+    playTrackNum(20,WAIT_END); // Lancio una monetina...
+    int r = random(0,2);
+    playTrackNum(15 + r,WAIT_END);
+    Serial.println(r==0 ? F("testa") : F("croce"));
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }
+
+  // #25 YES OR NO
+  // ---------------------------------------------------------------
+  if(!found && phoneNumber=="25") {
+    found = true;
+    setPhoneStatus(ANSWERING);
+    int r = random(0,2);
+    playTrackNum(13 + r,WAIT_END);
+    Serial.println(r==0 ? F("yes") : F("no"));
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }
+
+  // #26 PICK RANDOM FILE IN FOLDER 4
+  // ---------------------------------------------------------------
+  if(!found && phoneNumber=="26") {
+    found = true;
+
+    int maxRand = 4 + 1;
+            
+    setPhoneStatus(ANSWERING);
+    int r = random(1,maxRand);
+    playTrackFolderNum(4,r,WAIT_END);
+    Serial.print(F("r = ")); Serial.println(r);
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }  
+
+
+
+  // #4 METEO
+  // ---------------------------------------------------------------
+  if(phoneNumber=="4") {
+    found = true;
+    setPhoneStatus(ANSWERING);
+    if(wifi) {
+      tellMeMeteo();
+    } else {
+      playTrackNum(18,WAIT_END); // Internet not available
+    }
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }
+
+
+  // #9  RING BELLS AFTER 5 SECONDS (TEST ROUTINE)
+  // ---------------------------------------------------------------
+  if(phoneNumber=="9") {
+    setPhoneStatus( ANSWERING);
+    found = true;
+    setTheAlarm(phoneNumber);
+    setPhoneStatus( CALL_ENDED );
+    playTrackNum(1);
+  }
+
+  // #3456789 YOUR CUSTOM NUMBER THAT NOT MATCH PREVIOUS NUMBERS
+  // ---------------------------------------------------------------
+  if(phoneNumber=="3456789") {
+    found = true;
+    setPhoneStatus(ANSWERING);
+
+    //
+    // Add your code here
+    // then play your tracks
+    //
+    // use playTrackNum(x, WAIT_END) to play mp3 number x in mp3 folder.
+    // use playTrackFolderNum(x,y, WAIT_END); to play mp3 number y in x folder.
+    // use WAIT_END if you want the process to wait the end of the mp3
+    //
+
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }
+  
+
+
+
+  
+  
+  if(!found) {
+    // NUMBER NOT FOUND
+    //
+    setPhoneStatus(ANSWERING);
+    playTrackNum(random(10,13),WAIT_END); // modem o non attivo
+    setPhoneStatus(CALL_ENDED);
+    playTrackNum(1);
+  }
+}
+
+
 void setup() {
   Serial.begin(115200);
   while(!Serial);
@@ -1384,213 +1596,9 @@ void loop()
     if(phoneNumber!="") {
       Serial.print(F("> Call ")); Serial.println(phoneNumber);
 
-      //
-      // found is true is number dialed match a service
-      bool found = false;
-
-      
       setPhoneStatus( CALLING ); // calling
       waitingForAnswer(); // waiting answer sound
-  
-  
-  
-      // #1   OR  #1[d]{1,3}  OR    #1-HH-MM
-      // ---------------------------------------------------------------
-      if(phoneNumber.charAt(0)=='1' && phoneNumber.length()<=5) {
-        // NUMBER BEGINS WITH 1 TO SET TIME
-        //
-        setPhoneStatus( ANSWERING);
-        found = true;
-        if(phoneNumber.length()==1) {
-            // TELL THE TIME
-            tellTheTime();
-        }
-        if(phoneNumber.length()>1 && phoneNumber.length()<=5) {
-            // SET ALARM WITH MINUTES OR WITH HOURS AND MINUTES
-            setTheAlarm(phoneNumber);
-        }
-        setPhoneStatus( CALL_ENDED );
-        playTrackNum(1);
-      }
-  
-  
-      
-      // #2 DELETE ALARM
-      // ---------------------------------------------------------------
-      if(phoneNumber=="2") {
-        found = true;
-        timer_1 = 0;
-        caller_1="";
-        setPhoneStatus( ANSWERING );
-        playTrackFolderNum(1,64,WAIT_END); // Sveglia cancellata
-        setPhoneStatus( CALL_ENDED );
-        playTrackNum(1);
-      }
-  
-   
-  
-  
-  
-      // #21 RESTART WEMOS
-      // ---------------------------------------------------------------
-      if(phoneNumber=="21") {
-        found = true;
-        setPhoneStatus( ANSWERING );
-        playTrackNum(17,WAIT_END); // Restarting...
-        setPhoneStatus( CALL_ENDED);
-        ESP.restart();
-        
-      }
-  
-      // #22 GET TIME FROM INTERNET AGAIN
-      // ---------------------------------------------------------------
-      if(phoneNumber=="22") {
-        found = true;
-        setPhoneStatus(ANSWERING);
-        if(wifi) {
-          playTrackFolderNum(1,70,WAIT_END); // "Setting date and time from internet..."
-          setDateTimeFromWeb();
-        } else {
-          playTrackNum(18,WAIT_END); // "Internet not available"
-        }
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-        
-      }
-  
-      // #22-HH-MM SET TIME
-      // ---------------------------------------------------------------
-      if(phoneNumber.charAt(0)=='2' && phoneNumber.charAt(1)=='2' && phoneNumber.length()==6) {
-        found = true;
-        setPhoneStatus(ANSWERING);
-        setTheTime(phoneNumber);
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }
-  
-      // #22-YYYY-MM-DD SET DATE (TO DO)
-      // ---------------------------------------------------------------
-      if(phoneNumber.charAt(0)=='2' && phoneNumber.charAt(1)=='2' && phoneNumber.length()==10) {
-        found = true;
-        setPhoneStatus(ANSWERING);
-        setTheDate(phoneNumber);  // TO DO (mp3 answer not completed)
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }
-  
-      // #23 ACTIVATE AP
-      // ---------------------------------------------------------------
-      if(!found && phoneNumber=="23") {
-        found = true;
-        setPhoneStatus(ANSWERING);
-        playTrackNum(19,WAIT_END); // AP attivo cerca Vintagephone...
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1,WAIT_END);
-        Serial.println(F("AP"));
-        setupPortal();
-        connectToWifi();
-      }
-  
-  
-      // #24 HEADS OR TAILS
-      // ---------------------------------------------------------------
-      if(!found && phoneNumber=="24") {
-        found = true;
-        setPhoneStatus(ANSWERING);
-        playTrackNum(20,WAIT_END); // Lancio una monetina...
-        int r = random(0,2);
-        playTrackNum(15 + r,WAIT_END);
-        Serial.println(r==0 ? F("testa") : F("croce"));
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }
-  
-      // #25 YES OR NO
-      // ---------------------------------------------------------------
-      if(!found && phoneNumber=="25") {
-        found = true;
-        setPhoneStatus(ANSWERING);
-        int r = random(0,2);
-        playTrackNum(13 + r,WAIT_END);
-        Serial.println(r==0 ? F("yes") : F("no"));
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }
-  
-      // #26 PICK RANDOM FILE IN FOLDER 4
-      // ---------------------------------------------------------------
-      if(!found && phoneNumber=="26") {
-        found = true;
-
-        int maxRand = 4 + 1;
-                
-        setPhoneStatus(ANSWERING);
-        int r = random(1,maxRand);
-        playTrackFolderNum(4,r,WAIT_END);
-        Serial.print(F("r = ")); Serial.println(r);
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }  
-  
-  
-  
-      // #4 METEO
-      // ---------------------------------------------------------------
-      if(phoneNumber=="4") {
-        found = true;
-        setPhoneStatus(ANSWERING);
-        if(wifi) {
-          tellMeMeteo();
-        } else {
-          playTrackNum(18,WAIT_END); // Internet not available
-        }
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }
-
-
-      // #9  RING BELLS AFTER 5 SECONDS (TEST ROUTINE)
-      // ---------------------------------------------------------------
-      if(phoneNumber=="9") {
-        setPhoneStatus( ANSWERING);
-        found = true;
-        setTheAlarm(phoneNumber);
-        setPhoneStatus( CALL_ENDED );
-        playTrackNum(1);
-      }
-
-      // #3456789 YOUR CUSTOM NUMBER THAT NOT MATCH PREVIOUS NUMBERS
-      // ---------------------------------------------------------------
-      if(phoneNumber=="3456789") {
-        found = true;
-        setPhoneStatus(ANSWERING);
-
-        //
-        // Add your code here
-        // then play your tracks
-        //
-        // use playTrackNum(x, WAIT_END) to play mp3 number x in mp3 folder.
-        // use playTrackFolderNum(x,y, WAIT_END); to play mp3 number y in x folder.
-        // use WAIT_END if you want the process to wait the end of the mp3
-        //
-   
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }
-      
-
-
-
-      
-      
-      if(!found) {
-        // NUMBER NOT FOUND
-        //
-        setPhoneStatus(ANSWERING);
-        playTrackNum(random(10,13),WAIT_END); // modem o non attivo
-        setPhoneStatus(CALL_ENDED);
-        playTrackNum(1);
-      }
+      runPhoneNumber();
   
   
       
