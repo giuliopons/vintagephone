@@ -118,9 +118,9 @@ String readFile(const char* filename) {
     if (SPIFFS.exists(filename)) {
       File f = SPIFFS.open(filename, "r");
       if (!f) {
-        Serial.print("Unable To Open '");
+        Serial.print(F("Unable To Open '"));
         Serial.print(filename);
-        Serial.println("' for Reading");
+        Serial.println(F("' for Reading"));
         Serial.println();
       } else {
         String s;
@@ -136,7 +136,7 @@ String readFile(const char* filename) {
       }
    
     } else {
-      Serial.print("Unable To Find ");
+      Serial.print(F("Unable To Find "));
       Serial.println(filename);
       Serial.println();
     }
@@ -171,7 +171,7 @@ void readUserData(){
 // Try wi-fi connection for "sec" seconds, return true on success
 boolean tryWifi(int sec) {
   WiFi.mode(WIFI_STA);
-  Serial.println("Try wifi");
+  Serial.println(F("Try wifi"));
   Serial.println(userdata.ssid);
   Serial.println(userdata.password);
   WiFi.begin(userdata.ssid, userdata.password);
@@ -180,17 +180,17 @@ boolean tryWifi(int sec) {
   byte onOffLed = 0;
   while (WiFi.status() != WL_CONNECTED) {
     onOffLed++;
-    Serial.print(".");
+    Serial.print(F("."));
     if(onOffLed % 2==1) digitalWrite(D4, LOW); else digitalWrite(D4, HIGH);
     delay(1000);
     if (tries++ > sec) {
       // fail to connect
       digitalWrite(D4, HIGH);
-      Serial.println("");
+      Serial.println();
       return false;
     }
   }
-  Serial.println("");
+  Serial.println();
   digitalWrite(D4, HIGH);
   return true; 
 }
@@ -204,12 +204,12 @@ void connectToWifi(int times = 3, bool startSetupPortal = false){
   }
   if(!wifi) {
     if(startSetupPortal) setupPortal();
-    Serial.println("WIFI not found");
+    Serial.println(F("WIFI not found"));
   } else {
-    Serial.println("WIFI OK");
+    Serial.println(F("WIFI OK"));
     
     if (MDNS.begin(projectname)) {
-      Serial.println("MDNS responder started");
+      Serial.println(F("MDNS responder started"));
     }
 
   }
@@ -219,7 +219,7 @@ void connectToWifi(int times = 3, bool startSetupPortal = false){
 
 // AP PORTAL: homepage, load home.html from SPIFFS
 void handleHomeMenu() {
-    Serial.println("home");
+    Serial.println(F("home"));
     String o = readFile("/home.html");
     webServer.send(200,   "text/html", o );
 }
@@ -253,7 +253,7 @@ void handleFormWifiSetup() {
     userdata.ssid[webServer.arg("ssid").length()] = userdata.password[webServer.arg("password").length()] = '\0';
     EEPROM.put(0, userdata);
     EEPROM.commit();
-    Serial.println("saved");
+    Serial.println(F("saved"));
     String o = readFile("/savedwifisetup.html");
     String css = readFile("/style.css"); 
     o.replace("<link rel=\"stylesheet\" href=\"style.css\">","<style>" + css + "</style>");
@@ -263,12 +263,12 @@ void handleFormWifiSetup() {
     while(millis()<timer) {
       yield();
     }
-    Serial.println("restart");
+    Serial.println(F("restart"));
     ESP.restart();
       
   } else {
 
-    Serial.println("form");
+    Serial.println(F("form"));
     String o = readFile("/wifisetup.html");
     o.replace("#ssid#", userdata.ssid);
     o.replace("#pwd#", userdata.password);
@@ -289,7 +289,7 @@ void handleFormSettings() {
     userdata.lat[webServer.arg("lat").length()] = userdata.lon[webServer.arg("lon").length()] = userdata.utc[webServer.arg("utc").length()] = '\0';
     EEPROM.put(0, userdata);
     EEPROM.commit();
-    Serial.println("saved");
+    Serial.println(F("saved"));
     String o = readFile("/savedsettings.html");
     String css = readFile("/style.css"); 
     o.replace("<link rel=\"stylesheet\" href=\"style.css\">","<style>" + css + "</style>");
@@ -297,7 +297,7 @@ void handleFormSettings() {
       
   } else {
 
-    Serial.println("form");
+    Serial.println(F("form"));
     String o = readFile("/settings.html");
     o.replace("#lat#", userdata.lat);
     o.replace("#lon#", userdata.lon);
@@ -309,8 +309,8 @@ void handleFormSettings() {
 
 // AP PORTAL: setup the portal
 void setupPortal() {
-      Serial.println("");
-      Serial.println("Start access point");
+      Serial.println();
+      Serial.println(F("Start access point"));
 
       IPAddress apIP(172, 217, 28, 1);
 
@@ -407,7 +407,7 @@ void printDateTime(DateTime now){
       Serial.print(now.minute(), DEC);
       Serial.print(':');
       Serial.print(now.second(), DEC);
-      Serial.print(" giorno ");
+      Serial.print(F(" giorno "));
       Serial.print(now.dayOfTheWeek(), DEC);
       Serial.println();
 }
@@ -495,15 +495,15 @@ public:
     
     if (source & DfMp3_PlaySources_Sd) 
     {
-        Serial.print("SD Card, ");
+        Serial.print(F("SD Card, "));
     }
     if (source & DfMp3_PlaySources_Usb) 
     {
-        Serial.print("USB Disk, ");
+        Serial.print(F("USB Disk, "));
     }
     if (source & DfMp3_PlaySources_Flash) 
     {
-        Serial.print("Flash, ");
+        Serial.print(F("Flash, "));
     }
     //Serial.println(action);
   }
@@ -512,14 +512,14 @@ public:
   {
     // see DfMp3_Error for code meaning
     Serial.println();
-    Serial.print("Com Error ");
+    Serial.print(F("Com Error "));
     Serial.println(errorCode);
     mp3_error_code = errorCode;
   }
   //static void OnPlayFinished(DfMp3_PlaySources source, uint16_t track)
   static void OnPlayFinished([[maybe_unused]] DfMp3& mp3, [[maybe_unused]] DfMp3_PlaySources source, uint16_t track)
   {
-    Serial.print("Play finished for #");
+    Serial.print(F("Play finished for #"));
     Serial.println(track);  
     playing = 0;
     mp3_error_code = 0;
@@ -573,7 +573,7 @@ void playTrackNum(uint8_t track,bool waitEnd=false) {
      playing = 1;
      dfmp3.playMp3FolderTrack(track);
      if(waitEnd) {
-      Serial.println("wait");
+      Serial.println(F("wait"));
       while(playing==1) {
         dfmp3.loop();
         checkHangStatus();
@@ -622,7 +622,7 @@ void readNumberDialed() {
       if (needToPrint) {
         // if it's only just finished being dialed, we need to send the number down the serial
         // line and reset the count. We mod the count by 10 because '0' will send 10 pulses.
-        Serial.print("(");Serial.print(count % 10, DEC);Serial.println(")");
+        Serial.print(F("("));Serial.print(count % 10, DEC);Serial.println(F(")"));
         digits++;
         phoneNumber += (String)(count % 10);
         needToPrint = 0;
@@ -896,10 +896,10 @@ void tellMeMeteo(String pn) {
     
       int w = 0;
       while (pch) {
-        Serial.print(i); Serial.print("=>> ");
+        Serial.print(i); Serial.print(F("=>> "));
         w = atoi(pch);
         Serial.print(pch);
-        Serial.print("----");
+        Serial.print(F("----"));
         Serial.println(w);
 
         if (i==0) {
@@ -966,7 +966,7 @@ void bells( int maxRings ) {
   while(phoneStatus==RINGING && maxRings>=1) {
     int i = 0;
     int d = DELAY_RING;
-    Serial.print("Ring");
+    Serial.print(F("Ring"));
     while(phoneStatus==RINGING && i<30) {
       digitalWrite(PIN_BELL_2,LOW);
       digitalWrite(PIN_BELL_1,HIGH);
@@ -1008,7 +1008,7 @@ void setPhoneStatus(byte newStatus) {
   if (phoneStatus!=newStatus) {
     //oldStatus = phoneStatus;
     phoneStatus = newStatus;
-    Serial.println("PHONE STATUS IS " + (String)phoneStatus);
+    Serial.print(F("PHONE STATUS IS ")); Serial.println(phoneStatus);
   }
 }
 
@@ -1127,8 +1127,8 @@ void setTheAlarm(String numberDialed) {
         temp[0] = numberDialed.charAt(3);
         temp[1] = numberDialed.charAt(4);
         int mt = temp.toInt();
-        Serial.print("ht = "); Serial.println(ht);
-        Serial.print("mt = "); Serial.println(mt);
+        Serial.print(F("ht = ")); Serial.println(ht);
+        Serial.print(F("mt = ")); Serial.println(mt);
 
         DateTime a = rtc.now();
         
@@ -1162,9 +1162,9 @@ void setTheAlarm(String numberDialed) {
 void setup() {
   Serial.begin(115200);
   while(!Serial);
-  Serial.println("-----------------------");
-  Serial.println("Welcome to Vintagephone");
-  Serial.println("-----------------------");
+  Serial.println(F("-----------------------"));
+  Serial.println(F("Welcome to Vintagephone"));
+  Serial.println(F("-----------------------"));
   uint32_t chipId = ESP.getChipId();
   sprintf(projectname, "vintagephone_%X", chipId);
   Serial.println(projectname);
@@ -1197,10 +1197,10 @@ void setup() {
   // Start the file subsystem, used to store HTML
   // CSS and other files for captive portal AP
   if (SPIFFS.begin()) {
-      Serial.println("SPIFFS Active");
+      Serial.println(F("SPIFFS Active"));
       spiffsActive = true;
   } else {
-      Serial.println("Unable to activate SPIFFS");
+      Serial.println(F("Unable to activate SPIFFS"));
   }
 
 
@@ -1241,13 +1241,13 @@ void setup() {
   dfmp3.reset();
   dfmp3.setVolume(VOLUME);
   uint16_t count = dfmp3.getTotalTrackCount(DfMp3_PlaySource_Sd);
-  Serial.println("files found " + (String)count);
+  Serial.print(F("files found ")); Serial.println(count);
   
   uint16_t mode = dfmp3.getPlaybackMode();
 
   
 
-  Serial.println("Status is: " + (String)phoneStatus);
+  Serial.print(F("Status is: ")); Serial.println(phoneStatus);
 
 
   //
@@ -1262,10 +1262,10 @@ void setup() {
     else // U_SPIFFS
       type = "filesystem";
     // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-    Serial.println("Start updating " + type);
+    Serial.print(F("Start updating ")); Serial.println(type);
   });
   ArduinoOTA.onEnd([]() {
-    Serial.println("\nEnd");
+    Serial.println(F("\nEnd"));
   });
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
@@ -1273,10 +1273,10 @@ void setup() {
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR) Serial.println("Auth Failed");
-    else if (error == OTA_BEGIN_ERROR) Serial.println("Begin Failed");
-    else if (error == OTA_CONNECT_ERROR) Serial.println("Connect Failed");
-    else if (error == OTA_RECEIVE_ERROR) Serial.println("Receive Failed");
-    else if (error == OTA_END_ERROR) Serial.println("End Failed");
+    else if (error == OTA_BEGIN_ERROR) Serial.println(F("Begin Failed"));
+    else if (error == OTA_CONNECT_ERROR) Serial.println(F("Connect Failed"));
+    else if (error == OTA_RECEIVE_ERROR) Serial.println(F("Receive Failed"));
+    else if (error == OTA_END_ERROR) Serial.println(F("End Failed"));
   });
   ArduinoOTA.begin();
   // -----------------------------------------------
@@ -1334,7 +1334,7 @@ void loop()
   // happens this code tries to solve the Com Error 3
   /*
     if(mp3_error_code == 3) {
-    Serial.println(".....");
+    Serial.println(F("....."));
     mp3_error_code = 0;
     dfmp3.begin();dfmp3.reset();dfmp3.setVolume(VOLUME);
     delay(200);
@@ -1392,7 +1392,7 @@ void loop()
     readNumberDialed() ;
     
     if(phoneNumber!="") {
-      Serial.println("> Call " + phoneNumber);
+      Serial.print(F("> Call ")); Serial.println(phoneNumber);
 
       //
       // found is true is number dialed match a service
@@ -1496,7 +1496,7 @@ void loop()
         playTrackNum(19,WAIT_END); // AP attivo cerca Vintagephone...
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1,WAIT_END);
-        Serial.println("AP");
+        Serial.println(F("AP"));
         setupPortal();
         connectToWifi();
       }
@@ -1510,7 +1510,7 @@ void loop()
         playTrackNum(20,WAIT_END); // Lancio una monetina...
         int r = random(0,2);
         playTrackNum(15 + r,WAIT_END);
-        Serial.println(r==0 ? "testa" : "croce");
+        Serial.println(r==0 ? F("testa") : F("croce"));
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1);
       }
@@ -1522,7 +1522,7 @@ void loop()
         setPhoneStatus(ANSWERING);
         int r = random(0,2);
         playTrackNum(13 + r,WAIT_END);
-        Serial.println(r==0 ? "yes" : "no");
+        Serial.println(r==0 ? F("yes") : F("no"));
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1);
       }
@@ -1537,7 +1537,7 @@ void loop()
         setPhoneStatus(ANSWERING);
         int r = random(1,maxRand);
         playTrackFolderNum(4,r,WAIT_END);
-        Serial.println("r = " + (String)r);
+        Serial.print(F("r = ")); Serial.println(r);
         setPhoneStatus(CALL_ENDED);
         playTrackNum(1);
       }  
