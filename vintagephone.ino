@@ -347,6 +347,27 @@ void handleHello() {
   webServer.send(200, "application/json", b);
 }
 
+// /status in station mode: current time and, if set, the next alarm time, as json, e.g.
+// {"now":"2026-09-27 14:35:00","alarm":"2026-09-27 15:05:00"} or {"now":"...","alarm":null}
+void handleAlarmStatus() {
+  DateTime n = rtc.now();
+  char nowStr[20];
+  snprintf_P(nowStr, sizeof(nowStr), PSTR("%04u-%02u-%02u %02u:%02u:%02u"), n.year(), n.month(), n.day(), n.hour(), n.minute(), n.second());
+
+  char b[80];
+  if (timer_1 > 0) {
+    // timer_1 is a millis() deadline: turn the remaining time into a wall-clock time
+    unsigned long secondsLeft = (timer_1 - millis()) / 1000;
+    DateTime a = n + (long)secondsLeft;
+    char alarmStr[20];
+    snprintf_P(alarmStr, sizeof(alarmStr), PSTR("%04u-%02u-%02u %02u:%02u:%02u"), a.year(), a.month(), a.day(), a.hour(), a.minute(), a.second());
+    snprintf_P(b, sizeof(b), PSTR("{\"now\":\"%s\",\"alarm\":\"%s\"}"), nowStr, alarmStr);
+  } else {
+    snprintf_P(b, sizeof(b), PSTR("{\"now\":\"%s\",\"alarm\":null}"), nowStr);
+  }
+  webServer.send(200, "application/json", b);
+}
+
 // REMOTE DIAL: /dial?number=xxxx&key=...
 // Answers right away. Most numbers are queued and loop() makes the phone ring; if the user
 // answers, the service runs. The alarm numbers (see isSilentNumber) are run at once, no ringing.
@@ -1643,10 +1664,12 @@ void setup() {
   // -----------------------------------------------
 
   //
-  // Web server in station mode: /hello (name and uptime) and /dial. The portal pages (that show the wifi password)
-  // are registered by setupPortal() only, so they are never exposed on the home network.
+  // Web server in station mode: /hello (name and uptime), /status (current time and next alarm) and /dial.
+  // The portal pages (that show the wifi password) are registered by setupPortal() only, so they
+  // are never exposed on the home network.
   if(wifi) {
     webServer.on("/hello", handleHello);
+    webServer.on("/status", handleAlarmStatus);
     webServer.on("/dial", handleDial);
     webServer.on("/heap", handleHeap);  // TEMPORARY (HANDOFF part 0): heap figures, remove before committing
     webServer.begin();

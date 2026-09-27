@@ -44,6 +44,7 @@ When the phone is connected to your Wi-Fi it also has a small web server. The ad
 | Endpoint | Function |
 |----------|----------|
 | `/hello` | Is the phone online? Answers `{"name":"vintagephone_XXXXXX","uptime":3600}` (uptime in seconds) |
+| `/status` | Current time and, if set, the next alarm time: `{"now":"2026-09-27 14:35:00","alarm":"2026-09-27 15:05:00"}`, or `"alarm":null` if no alarm is set |
 | `/dial?number=NNNN&key=KEY` | Dial a number from the phone book, remotely |
 
 `/dial` works like this:
