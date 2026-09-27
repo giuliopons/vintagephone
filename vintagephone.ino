@@ -369,12 +369,13 @@ void handleAlarmStatus() {
 }
 
 // REMOTE DIAL: /dial?number=xxxx&key=...
-// Answers right away. Most numbers are queued and loop() makes the phone ring; if the user
-// answers, the service runs. The alarm numbers (see isSilentNumber) are run at once, no ringing.
-// 200 ringing / 200 alarm set / 200 alarm deleted / 400 bad number / 400 bad time / 403 bad key / 409 phone busy
+// Answers right away, as json {"status":"..."}. Most numbers are queued and loop() makes the phone
+// ring; if the user answers, the service runs. The alarm numbers (see isSilentNumber) are run at
+// once, no ringing.
+// 200 ringing / 200 alarm set / 200 alarm deleted / 400 bad number / 400 bad time / 403 forbidden / 409 busy
 void handleDial() {
   if (strcmp_P(webServer.arg("key").c_str(), PSTR(DIAL_KEY)) != 0) {
-    webServer.send_P(403, PSTR("text/plain"), PSTR("forbidden"));
+    webServer.send_P(403, PSTR("application/json"), PSTR("{\"status\":\"forbidden\"}"));
     return;
   }
 
@@ -384,38 +385,38 @@ void handleDial() {
     if (n.charAt(i) < '0' || n.charAt(i) > '9') valid = false;
   }
   if (!valid) {
-    webServer.send_P(400, PSTR("text/plain"), PSTR("bad number"));
+    webServer.send_P(400, PSTR("application/json"), PSTR("{\"status\":\"bad number\"}"));
     return;
   }
 
   if (isSilentNumber(n)) {
     // alarm numbers: no ringing. Only with the handset down, or the confirmation would be spoken in another call.
     if (n.length() == 5 && ((n.charAt(1) - '0') * 10 + (n.charAt(2) - '0') > 23 || (n.charAt(3) - '0') * 10 + (n.charAt(4) - '0') > 59)) {
-      webServer.send_P(400, PSTR("text/plain"), PSTR("bad time"));
+      webServer.send_P(400, PSTR("application/json"), PSTR("{\"status\":\"bad time\"}"));
       return;
     }
     if (ap_active || phoneStatus != HANDSET_DOWN) {
-      webServer.send_P(409, PSTR("text/plain"), PSTR("busy"));
+      webServer.send_P(409, PSTR("application/json"), PSTR("{\"status\":\"busy\"}"));
       return;
     }
     if (n == "2") {
       deleteAlarm();
-      webServer.send_P(200, PSTR("text/plain"), PSTR("alarm deleted"));
+      webServer.send_P(200, PSTR("application/json"), PSTR("{\"status\":\"alarm deleted\"}"));
     } else {
       setTheAlarm(n);   // with the handset down it doesn't play anything
-      webServer.send_P(200, PSTR("text/plain"), PSTR("alarm set"));
+      webServer.send_P(200, PSTR("application/json"), PSTR("{\"status\":\"alarm set\"}"));
     }
     return;
   }
 
   if (ap_active || dialPending || phoneStatus != HANDSET_DOWN) {
-    webServer.send_P(409, PSTR("text/plain"), PSTR("busy"));
+    webServer.send_P(409, PSTR("application/json"), PSTR("{\"status\":\"busy\"}"));
     return;
   }
 
   strlcpy(dialNumber, n.c_str(), sizeof(dialNumber));
   dialPending = true;
-  webServer.send_P(200, PSTR("text/plain"), PSTR("ringing"));
+  webServer.send_P(200, PSTR("application/json"), PSTR("{\"status\":\"ringing\"}"));
 }
 
 // AP PORTAL: setup the portal

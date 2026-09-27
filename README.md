@@ -57,16 +57,16 @@ When the phone is connected to your Wi-Fi it also has a small web server. The ad
 
 `#21` (restart) and `#23` (access point) can't be dialed remotely.
 
-Answers:
+Answers, as json (`{"status":"..."}`):
 
-| Code | Meaning |
-|------|---------|
-| `200 ringing` | The phone is ringing! |
-| `200 alarm set` / `200 alarm deleted` | The alarm number was executed |
-| `400 bad number` | The number is empty, longer than 10 digits, has non-digit characters, or is `21` or `23` |
-| `400 bad time` | Alarm `1HHMM` with an invalid time |
-| `403 forbidden` | Wrong `key` |
-| `409 busy` | The handset is up, there is a call in progress or the access point is active |
+| Code | Status | Meaning |
+|------|--------|---------|
+| `200` | `ringing` | The phone is ringing! |
+| `200` | `alarm set` / `alarm deleted` | The alarm number was executed |
+| `400` | `bad number` | The number is empty, longer than 10 digits, has non-digit characters, or is `21` or `23` |
+| `400` | `bad time` | Alarm `1HHMM` with an invalid time |
+| `403` | `forbidden` | Wrong `key` |
+| `409` | `busy` | The handset is up, there is a call in progress or the access point is active |
 
 Examples:
 
